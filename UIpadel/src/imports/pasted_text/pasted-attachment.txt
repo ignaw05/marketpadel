@@ -1,0 +1,94 @@
+Creá una web app de marketplace de paletas de pádel usadas para Argentina, estilo
+Facebook Marketplace pero nicho y más cuidado visualmente. Todo el texto en español
+rioplatense, precios en pesos argentinos (formato $ 350.000).
+
+── IDENTIDAD VISUAL ──
+Light mode, limpio y luminoso. Paleta:
+- Fondo general: #FAFAF8 (blanco cálido, nunca blanco puro)
+- Superficies / cards: #FFFFFF
+- Bordes sutiles: #E6E4DF
+- Acento primario (verde profundo): #0F5132 — CTAs, precios y estados activos
+- Acento secundario (lima deportivo): #C7F751 — solo para badges de estado sobre foto
+- Verde WhatsApp: #25D366 (exclusivo del botón de contacto)
+- Texto: #14171A principal, #6B7280 secundario
+Tipografía sans geométrica (tipo Inter / Satoshi). Bordes redondeados de 14px.
+Sombras muy suaves y difusas (0 1px 3px rgba(0,0,0,0.06)), nada de bordes duros ni
+gradientes. Mucho aire entre elementos. Sensación premium y confiable, tipo
+Mercado Libre pero con mejor gusto — no de clasificado barato.
+
+── PANTALLA 1: AUTH ──
+Login y registro en una sola pantalla con tabs. Campos: email, contraseña, y en
+registro también nombre, apellido y número de WhatsApp. Botón primario verde #0F5132.
+Layout centrado, con el logo "PaletaMarket" arriba. En desktop, split screen: mitad
+izquierda una foto grande de paletas sobre fondo #F2F1ED, mitad derecha el formulario
+sobre blanco.
+
+── PANTALLA 2: GRID DE PALETAS (home) ──
+Header sticky blanco con borde inferior #E6E4DF: logo, buscador, filtros y avatar.
+Filtros en chips horizontales: Marca, Forma (Diamante / Lágrima / Redonda), Rango de
+precio, Ubicación, Estado. Chip inactivo con borde gris, chip activo relleno #0F5132
+con texto blanco.
+Grid responsive: 4 columnas en desktop, 3 en tablet, 2 en mobile.
+
+La card muestra SOLO esto (no la sobrecargues):
+- Foto de la paleta (aspect ratio 4:5, fondo #F2F1ED si la imagen tiene transparencia,
+  ocupa la mayor parte de la card)
+- Badge flotante arriba a la derecha con el estado (ej: "9/10"), fondo lima #C7F751
+  con texto #14171A
+- Marca + modelo en una línea (ej: "Bullpadel Vertex 04")
+- Precio grande y en negrita, color #0F5132
+- Ubicación en texto chico #6B7280 con un ícono de pin
+Hover: la sombra se profundiza y scale 1.02.
+
+── PANTALLA 3: MODAL DE DETALLE ──
+Al tocar una card se abre un modal blanco con overlay rgba(20,23,26,0.4).
+En mobile es un bottom sheet full-height.
+Contiene: foto grande, marca, modelo, precio, y una grilla de specs con
+Estado / Forma / Año / Ubicación (cada spec en una celda con fondo #F2F1ED).
+Debajo la descripción escrita por el vendedor.
+Al pie, bloque del vendedor con avatar circular, nombre y apellido, y "Miembro desde
+2024". Botón ancho verde #25D366 con ícono de WhatsApp: "Contactar por WhatsApp".
+
+── PANTALLA 4: PUBLICAR PALETA ──
+Formulario en un solo paso sobre card blanca centrada, prolijo, con labels claros.
+Inputs con fondo #FAFAF8, borde #E6E4DF, y borde #0F5132 al hacer focus.
+- Uploader de imágenes con drag & drop (hasta 4 fotos, preview en miniaturas)
+- Marca (select: Bullpadel, Nox, Adidas, Head, Babolat, Wilson, Siux, StarVie,
+  Drop Shot, Royal Padel, Vibor-A, Varlion)
+- Modelo (texto)
+- Forma (3 botones tipo toggle con íconos: Diamante, Lágrima, Redonda)
+- Estado (slider de 1 a 10 que muestra la etiqueta automática: 10/10 SIN USO,
+  9/10 COMO NUEVA, 8/10 MUY BUENA, 7/10 BUENA, 6/10 USADA)
+- Año (select)
+- Precio en ARS con formateo de miles en vivo
+- Ubicación (provincia + ciudad)
+- Descripción (textarea con contador de 300 caracteres)
+Botón "Publicar paleta" fijo abajo en mobile, con barra blanca y sombra superior.
+
+── PANTALLA 5: MIS PUBLICACIONES ──
+Panel del usuario con sus paletas listadas en cards horizontales compactas
+(thumbnail chico + datos + precio). Cada una con menú de tres puntos:
+Editar / Pausar / Eliminar. El eliminar abre un modal de confirmación con botón rojo.
+Arriba, tres tarjetas de métricas simples sobre fondo blanco: Publicaciones activas,
+Vendidas, Visitas totales.
+Empty state ilustrado si no publicó nada, con CTA a "Publicar tu primera paleta".
+
+── DATOS DE EJEMPLO (usá estas paletas reales) ──
+1. Bullpadel Vertex 04 Comfort — Diamante — 2024 — 9/10 — $ 420.000 — Mendoza
+2. Nox AT10 Genius 18K — Lágrima — 2023 — 8/10 — $ 385.000 — CABA
+3. Adidas Metalbone 3.3 — Diamante — 2024 — 9/10 — $ 450.000 — Rosario
+4. Head Delta Pro — Diamante — 2023 — 7/10 — $ 240.000 — Córdoba
+5. Babolat Technical Viper — Diamante — 2023 — 8/10 — $ 310.000 — La Plata
+6. Siux Electra ST3 Stupa — Lágrima — 2024 — 10/10 — $ 395.000 — Mendoza
+7. StarVie Metheora Warrior — Redonda — 2022 — 7/10 — $ 195.000 — Mar del Plata
+8. Wilson Bela Pro V2.5 — Lágrima — 2023 — 8/10 — $ 275.000 — CABA
+9. Drop Shot Conqueror 12 — Diamante — 2024 — 9/10 — $ 330.000 — Neuquén
+10. Nox ML10 Pro Cup — Redonda — 2023 — 8/10 — $ 260.000 — Tucumán
+11. Royal Padel Whip Polietileno — Lágrima — 2022 — 6/10 — $ 165.000 — Salta
+12. Vibor-A Yarara Edition — Lágrima — 2024 — 9/10 — $ 355.000 — Mendoza
+Descripciones cortas y creíbles, escritas como las escribiría un jugador
+("La usé una temporada, sin roturas ni golpes en el marco. Va con paletero.").
+
+── COMPORTAMIENTO ──
+Mobile first, todo responsive. Transiciones suaves en modales y hover.
+Estados vacíos y de carga contemplados. Sin scroll horizontal en ningún breakpoint.
