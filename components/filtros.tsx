@@ -2,9 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
-import { FORMAS, PRECIOS, ESTADOS } from "@/lib/paletas";
+import {
+  FORMAS,
+  ESTADOS,
+  PRECIO_TOPE,
+  PRECIO_PASO,
+  formatPrecio,
+  topePrecio,
+} from "@/lib/paletas";
+
+const CLAVES = ["marca", "forma", "precioMax", "ciudad", "estado"];
 
 /** Arma el href conservando el resto de los filtros y la busqueda. */
 function useHref() {
@@ -31,14 +40,15 @@ function Dropdown({
   const params = useSearchParams();
   const href = useHref();
   const valor = params.get(clave);
+  const ordenadas = [...opciones].sort((a, b) => a.localeCompare(b, "es-AR"));
 
   return (
-    <div className="relative">
+    <div className="relative md:w-full">
       <button
         type="button"
         onClick={() => setAbierto((o) => !o)}
         aria-expanded={abierto}
-        className="flex min-h-[44px] shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="flex min-h-[44px] shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 md:w-full md:justify-between md:rounded-[12px]"
         style={{
           background: valor ? "#0F5132" : "#FFFFFF",
           color: valor ? "#FFFFFF" : "#14171A",
@@ -61,7 +71,7 @@ function Dropdown({
             <span className="sr-only">Cerrar el menú</span>
           </button>
           <div
-            className="absolute left-0 top-full z-20 mt-2 max-h-64 w-52 overflow-y-auto rounded-[14px] p-1.5"
+            className="absolute left-0 top-full z-20 mt-2 max-h-64 w-52 overflow-y-auto rounded-[14px] p-1.5 md:w-full"
             style={{
               background: "#FFFFFF",
               border: "1px solid #E6E4DF",
@@ -77,7 +87,7 @@ function Dropdown({
             >
               Todas
             </Link>
-            {opciones.map((o) => (
+            {ordenadas.map((o) => (
               <Link
                 key={o}
                 href={href(clave, o)}
@@ -100,25 +110,69 @@ function Dropdown({
   );
 }
 
+/**
+ * ponytail: <input type="range"> nativo con accent-color, sin libreria de slider.
+ * Un solo pulgar = precio maximo; el minimo es siempre 0. Si hace falta rango
+ * min-max, ahi si entra un componente de dos pulgares.
+ * Navega al soltar (pointerup/keyup), no en cada pixel: cada commit es una query.
+ */
+function PrecioSlider() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const href = useHref();
+  const [valor, setValor] = useState(topePrecio(params.get("precioMax") ?? undefined) ?? PRECIO_TOPE);
+
+  const aplicar = () =>
+    router.replace(href("precioMax", valor >= PRECIO_TOPE ? null : String(valor)), {
+      scroll: false,
+    });
+
+  return (
+    <div className="w-full md:mt-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <label htmlFor="precioMax" className="text-[13px]" style={{ color: "#14171A", fontWeight: 600 }}>
+          Precio hasta
+        </label>
+        <output htmlFor="precioMax" className="text-[13px]" style={{ color: "#5B6470" }}>
+          {valor >= PRECIO_TOPE ? "Sin tope" : formatPrecio(valor)}
+        </output>
+      </div>
+      <input
+        id="precioMax"
+        name="precioMax"
+        type="range"
+        min={PRECIO_PASO}
+        max={PRECIO_TOPE}
+        step={PRECIO_PASO}
+        value={valor}
+        onChange={(e) => setValor(Number(e.target.value))}
+        onPointerUp={aplicar}
+        onKeyUp={aplicar}
+        className="h-11 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{ accentColor: "#0F5132", outlineColor: "#0F5132" }}
+      />
+    </div>
+  );
+}
+
 export function Filtros({ marcas, ciudades }: { marcas: string[]; ciudades: string[] }) {
   const params = useSearchParams();
-  const activos = ["marca", "forma", "precio", "ciudad", "estado"].filter((k) =>
-    params.get(k),
-  ).length;
+  const activos = CLAVES.filter((k) => params.get(k)).length;
   const q = params.get("q");
 
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-2 pb-1">
+    <div className="mb-5 flex flex-wrap items-center gap-2 pb-1 md:mb-0 md:flex-col md:items-stretch md:gap-3">
       <Dropdown etiqueta="Marca" clave="marca" opciones={marcas} />
       <Dropdown etiqueta="Forma" clave="forma" opciones={[...FORMAS]} />
-      <Dropdown etiqueta="Precio" clave="precio" opciones={PRECIOS.map((p) => p.label)} />
       <Dropdown etiqueta="Ubicación" clave="ciudad" opciones={ciudades} />
       <Dropdown etiqueta="Estado" clave="estado" opciones={ESTADOS.map((e) => e.label)} />
+      {/* key: al limpiar filtros o volver atras, el pulgar se reposiciona solo */}
+      <PrecioSlider key={params.get("precioMax") ?? ""} />
 
       {activos > 0 && (
         <Link
           href={q ? `/?q=${encodeURIComponent(q)}` : "/"}
-          className="flex min-h-[44px] items-center gap-1 rounded-full px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="flex min-h-[44px] items-center gap-1 rounded-full px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 md:justify-center"
           style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#0F5132" }}
         >
           <X size={14} aria-hidden /> Limpiar filtros

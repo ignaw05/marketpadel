@@ -7,7 +7,7 @@ import {
   PREFIJO_WHATSAPP,
   type DatosPaleta,
 } from "./validar";
-import { formatPrecio, estadoLabel, foto } from "./paletas";
+import { formatPrecio, estadoLabel, foto, topePrecio, PRECIO_TOPE } from "./paletas";
 
 const ok = (): DatosPaleta => ({
   marca_id: 3,
@@ -157,6 +157,15 @@ test("los precios se muestran en pesos sin decimales", () => {
   // NBSP entre el signo y el numero: comparo sin espacios
   expect(formatPrecio(145000).replace(/\s/g, "")).toBe("$145.000");
   expect(formatPrecio(600000).replace(/\s/g, "")).toBe("$600.000");
+});
+
+test("el tope de precio ignora lo que no filtra nada", () => {
+  expect(topePrecio("150000")).toBe(150000);
+  expect(topePrecio(undefined)).toBe(null); // sin filtro
+  expect(topePrecio("")).toBe(null);
+  expect(topePrecio("caro")).toBe(null); // ?precioMax=caro no tiene que romper la query
+  expect(topePrecio("-1")).toBe(null);
+  expect(topePrecio(String(PRECIO_TOPE))).toBe(null); // el slider al maximo es "sin tope"
 });
 
 test("la etiqueta de estado cubre todos los tramos", () => {

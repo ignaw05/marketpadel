@@ -80,29 +80,33 @@ export function HomeScreen({
   // Solo las claves que la query mira. Con Object.values(), cualquier param de
   // paso (?error=..., ?utm_source=...) haria creer que hay filtros puestos y
   // mostraria "no encontramos" en vez del vacio real.
-  const buscando = (["q", "marca", "forma", "ciudad", "precio", "estado"] as const).some(
+  const buscando = (["q", "marca", "forma", "ciudad", "precioMax", "estado"] as const).some(
     (k) => filtros[k],
   );
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 py-5 md:px-6">
-      <Suspense fallback={<div className="mb-5 h-[44px]" />}>
-        <Filtros marcas={marcas} ciudades={ciudades} />
-      </Suspense>
+    <div className="mx-auto flex max-w-[1280px] flex-col px-4 py-5 md:flex-row md:gap-8 md:px-6">
+      <aside className="md:w-[220px] md:shrink-0">
+        <Suspense fallback={<div className="mb-5 h-[44px] md:h-[320px]" />}>
+          <Filtros marcas={marcas} ciudades={ciudades} />
+        </Suspense>
+      </aside>
 
-      {paletas.length === 0 ? (
-        buscando ? (
-          <SinResultados />
+      <div className="min-w-0 flex-1">
+        {paletas.length === 0 ? (
+          buscando ? (
+            <SinResultados />
+          ) : (
+            <TodavíaNoHayNada />
+          )
         ) : (
-          <TodavíaNoHayNada />
-        )
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {paletas.map((p, i) => (
-            <PaletaCard key={p.id} paleta={p} priority={i < 4} />
-          ))}
-        </div>
-      )}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {paletas.map((p, i) => (
+              <PaletaCard key={p.id} paleta={p} priority={i < 4} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

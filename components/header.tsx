@@ -6,7 +6,7 @@ import { Search, Plus, LayoutGrid, LogOut } from "lucide-react";
 import { Logo } from "./logo";
 import { cerrarSesion } from "@/app/auth/actions";
 
-const OTROS_FILTROS = ["marca", "forma", "ciudad", "precio", "estado"];
+const OTROS_FILTROS = ["marca", "forma", "ciudad", "precioMax", "estado"];
 
 /**
  * ponytail: form GET nativo, busca al hacer Enter. Sin router.replace por tecla,
@@ -62,7 +62,7 @@ export function Header({ nombre, apellido }: { nombre: string; apellido: string 
       className="sticky top-0 z-30"
       style={{ background: "#FFFFFF", borderBottom: "1px solid #E6E4DF" }}
     >
-      <div className="mx-auto flex max-w-[1280px] items-center gap-3 px-4 py-3 md:gap-5 md:px-6">
+      <div className="mx-auto flex max-w-[1280px] items-center gap-2 px-4 py-3 sm:gap-3 md:gap-5 md:px-6">
         <Link
           href="/"
           className="shrink-0 rounded focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -71,9 +71,10 @@ export function Header({ nombre, apellido }: { nombre: string; apellido: string 
           <Logo />
         </Link>
 
-        <Buscador id="buscar-desktop" className="hidden flex-1 md:block" />
+        {/* min-w-0: sin esto el flex item no baja de su ancho de contenido y empuja al header fuera de pantalla */}
+        <Buscador id="buscar-desktop" className="hidden min-w-0 flex-1 md:block" />
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <Link
             href="/mis-publicaciones"
             aria-current={enMisPaletas ? "page" : undefined}
