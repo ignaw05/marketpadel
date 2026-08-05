@@ -43,6 +43,8 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// `api` afuera: el webhook de MercadoPago no tiene sesion y este proxy lo mandaria
+// a /auth con un 307. Se autentica solo, validando la firma.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|paletas/.*\\.webp|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|paletas/.*\\.webp|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
