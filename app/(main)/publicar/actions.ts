@@ -23,9 +23,13 @@ export async function publicar(
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  const archivos = fd
+  // Las fotos ya las subio el navegador al storage: aca llegan solo las URLs,
+  // y solo valen las de la carpeta de este usuario en nuestro bucket.
+  const prefijo = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/paletas/${user.id}/`;
+  const fotos = fd
     .getAll("fotos")
-    .filter((f): f is File => f instanceof File && f.size > 0);
+    .map(String)
+    .filter((u) => u.startsWith(prefijo));
 
   const datos = {
     marca_id: Number(texto(fd, "marca_id")),
@@ -37,7 +41,7 @@ export async function publicar(
     provincia: texto(fd, "provincia"),
     ciudad: texto(fd, "ciudad"),
     descripcion: texto(fd, "descripcion"),
-    fotos: archivos.map((f) => ({ tipo: f.type, bytes: f.size })),
+    fotos,
   };
 
   const valores = {
@@ -55,23 +59,6 @@ export async function publicar(
   const campos = validarPaleta(datos);
   if (Object.keys(campos).length) return { campos, valores };
 
-  // Storage: la policy exige que la carpeta sea el uid del que sube.
-  const urls: string[] = [];
-  for (const f of archivos) {
-    const ext = (f.name.split(".").pop() ?? "jpg").toLowerCase().slice(0, 5);
-    const ruta = `${user.id}/${crypto.randomUUID()}.${ext}`;
-
-    const { error } = await supabase.storage
-      .from("paletas")
-      .upload(ruta, f, { contentType: f.type, upsert: false });
-
-    if (error) {
-      return { error: "No pudimos subir las fotos. Probá de nuevo.", valores };
-    }
-
-    urls.push(supabase.storage.from("paletas").getPublicUrl(ruta).data.publicUrl);
-  }
-
   const { error } = await supabase.from("paletas").insert({
     vendedor_id: user.id,
     marca_id: datos.marca_id,
@@ -83,7 +70,7 @@ export async function publicar(
     provincia: datos.provincia,
     ciudad: datos.ciudad,
     descripcion: datos.descripcion,
-    fotos: urls,
+    fotos: datos.fotos,
   });
 
   if (error) {

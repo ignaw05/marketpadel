@@ -27,8 +27,24 @@ export type DatosPaleta = {
   provincia: string;
   ciudad: string;
   descripcion: string;
-  fotos: { tipo: string; bytes: number }[];
+  /** URLs ya subidas al storage. Los archivos se validan con validarFotos(). */
+  fotos: string[];
 };
+
+/**
+ * Corre en el navegador, antes de subir: el server ya no ve los archivos.
+ * Devuelve el mensaje de error o undefined si estan bien.
+ */
+export function validarFotos(
+  fotos: { tipo: string; bytes: number }[],
+): string | undefined {
+  if (fotos.length === 0) return "Subí al menos una foto.";
+  if (fotos.length > MAX_FOTOS) return `Máximo ${MAX_FOTOS} fotos.`;
+  if (fotos.some((f) => !f.tipo.startsWith("image/")))
+    return "Solo se pueden subir imágenes.";
+  if (fotos.some((f) => f.bytes > MAX_BYTES))
+    return "Cada foto tiene que pesar menos de 5 MB.";
+}
 
 export type Errores<C extends string> = Partial<Record<C, string>>;
 
@@ -55,10 +71,6 @@ export function validarPaleta(
 
   if (d.fotos.length === 0) e.fotos = "Subí al menos una foto.";
   else if (d.fotos.length > MAX_FOTOS) e.fotos = `Máximo ${MAX_FOTOS} fotos.`;
-  else if (d.fotos.some((f) => !f.tipo.startsWith("image/")))
-    e.fotos = "Solo se pueden subir imágenes.";
-  else if (d.fotos.some((f) => f.bytes > MAX_BYTES))
-    e.fotos = "Cada foto tiene que pesar menos de 5 MB.";
 
   return e;
 }

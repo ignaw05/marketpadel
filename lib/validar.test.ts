@@ -1,13 +1,14 @@
 import { test, expect } from "vitest";
 import {
   validarPaleta,
+  validarFotos,
   validarAuth,
   limpiarBusqueda,
   armarWhatsapp,
   PREFIJO_WHATSAPP,
   type DatosPaleta,
 } from "./validar";
-import { formatPrecio, estadoLabel, foto } from "./paletas";
+import { formatPrecio, estadoLabel, foto, topePrecio, PRECIO_TOPE } from "./paletas";
 
 const ok = (): DatosPaleta => ({
   marca_id: 3,
@@ -19,7 +20,7 @@ const ok = (): DatosPaleta => ({
   provincia: "Mendoza",
   ciudad: "Mendoza",
   descripcion: "Sin golpes en el marco.",
-  fotos: [{ tipo: "image/webp", bytes: 200_000 }],
+  fotos: ["https://x.supabase.co/storage/v1/object/public/paletas/u/1.webp"],
 });
 
 // --- publicar -------------------------------------------------------------
@@ -66,21 +67,20 @@ test("modelo y descripcion respetan los limites del schema", () => {
   expect(validarPaleta({ ...ok(), descripcion: "x".repeat(301) }, 2026).descripcion).toBeDefined();
 });
 
-test("las fotos: al menos una, hasta 4, imagenes, menos de 5 MB", () => {
-  const foto = (tipo: string, bytes = 1000) => ({ tipo, bytes });
+test("publicar exige entre una y 4 fotos ya subidas", () => {
+  const url = ok().fotos[0];
   expect(validarPaleta({ ...ok(), fotos: [] }, 2026).fotos).toBeDefined();
-  expect(
-    validarPaleta({ ...ok(), fotos: Array(5).fill(foto("image/webp")) }, 2026).fotos,
-  ).toBeDefined();
-  expect(
-    validarPaleta({ ...ok(), fotos: [foto("application/pdf")] }, 2026).fotos,
-  ).toBeDefined();
-  expect(
-    validarPaleta({ ...ok(), fotos: [foto("image/webp", 6_000_000)] }, 2026).fotos,
-  ).toBeDefined();
-  expect(
-    validarPaleta({ ...ok(), fotos: Array(4).fill(foto("image/png")) }, 2026).fotos,
-  ).toBeUndefined();
+  expect(validarPaleta({ ...ok(), fotos: Array(5).fill(url) }, 2026).fotos).toBeDefined();
+  expect(validarPaleta({ ...ok(), fotos: Array(4).fill(url) }, 2026).fotos).toBeUndefined();
+});
+
+test("los archivos se filtran antes de subir: imagenes, hasta 4, menos de 5 MB", () => {
+  const f = (tipo: string, bytes = 1000) => ({ tipo, bytes });
+  expect(validarFotos([])).toBeDefined();
+  expect(validarFotos(Array(5).fill(f("image/webp")))).toBeDefined();
+  expect(validarFotos([f("application/pdf")])).toBeDefined();
+  expect(validarFotos([f("image/webp", 6_000_000)])).toBeDefined();
+  expect(validarFotos(Array(4).fill(f("image/png")))).toBeUndefined();
 });
 
 // --- auth -----------------------------------------------------------------
@@ -157,6 +157,15 @@ test("los precios se muestran en pesos sin decimales", () => {
   // NBSP entre el signo y el numero: comparo sin espacios
   expect(formatPrecio(145000).replace(/\s/g, "")).toBe("$145.000");
   expect(formatPrecio(600000).replace(/\s/g, "")).toBe("$600.000");
+});
+
+test("el tope de precio ignora lo que no filtra nada", () => {
+  expect(topePrecio("150000")).toBe(150000);
+  expect(topePrecio(undefined)).toBe(null); // sin filtro
+  expect(topePrecio("")).toBe(null);
+  expect(topePrecio("caro")).toBe(null); // ?precioMax=caro no tiene que romper la query
+  expect(topePrecio("-1")).toBe(null);
+  expect(topePrecio(String(PRECIO_TOPE))).toBe(null); // el slider al maximo es "sin tope"
 });
 
 test("la etiqueta de estado cubre todos los tramos", () => {

@@ -1,6 +1,6 @@
 // Solo servidor: usa next/headers via lib/supabase/server.
 import { createClient } from "@/lib/supabase/server";
-import { PRECIOS, ESTADOS, type Paleta, type Vendedor, type FiltrosFeed } from "@/lib/paletas";
+import { ESTADOS, topePrecio, type Paleta, type Vendedor, type FiltrosFeed } from "@/lib/paletas";
 import { limpiarBusqueda } from "@/lib/validar";
 import { conReintento } from "@/lib/reintentar";
 
@@ -10,7 +10,7 @@ const VISTA =
 export async function listarPaletas(f: FiltrosFeed): Promise<Paleta[]> {
   const supabase = await createClient();
   const busqueda = f.q ? limpiarBusqueda(f.q) : "";
-  const rango = PRECIOS.find((p) => p.label === f.precio);
+  const tope = topePrecio(f.precioMax);
   const minEstado = ESTADOS.find((e) => e.label === f.estado);
 
   const data = await conReintento(() => {
@@ -28,10 +28,7 @@ export async function listarPaletas(f: FiltrosFeed): Promise<Paleta[]> {
     if (f.forma) query = query.eq("forma", f.forma);
     if (f.ciudad) query = query.eq("ciudad", f.ciudad);
 
-    if (rango) {
-      query = query.gte("precio", rango.min);
-      if (rango.max !== null) query = query.lte("precio", rango.max);
-    }
+    if (tope !== null) query = query.lte("precio", tope);
     if (minEstado) query = query.gte("estado", minEstado.min);
 
     return query;

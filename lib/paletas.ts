@@ -35,7 +35,7 @@ export type FiltrosFeed = {
   marca?: string;
   forma?: string;
   ciudad?: string;
-  precio?: string;
+  precioMax?: string;
   estado?: string;
 };
 
@@ -71,11 +71,16 @@ export const PROVINCIAS = [
 const ANIO_ACTUAL = new Date().getFullYear();
 export const ANIOS = Array.from({ length: 8 }, (_, i) => ANIO_ACTUAL + 1 - i);
 
-export const PRECIOS = [
-  { label: "Hasta $ 200.000", min: 0, max: 200000 },
-  { label: "$ 200.000 – $ 350.000", min: 200000, max: 350000 },
-  { label: "Más de $ 350.000", min: 350000, max: null },
-];
+// ponytail: tope y paso fijos del slider. Si el catalogo se pasa de PRECIO_TOPE,
+// el upgrade es un max(precio) de la base cacheado en el Server Component.
+export const PRECIO_TOPE = 800000;
+export const PRECIO_PASO = 25000;
+
+/** Tope de precio pedido en la URL. null = sin tope: el slider esta al maximo. */
+export const topePrecio = (v?: string): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 && n < PRECIO_TOPE ? n : null;
+};
 
 export const ESTADOS = [
   { label: "10/10 sin uso", min: 10 },
