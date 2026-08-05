@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, MapPin, MessageCircle, Eye } from "lucide-react";
+import { ArrowLeft, MapPin, MessageCircle, Eye, Star } from "lucide-react";
 import { Galeria } from "./galeria";
+import { PromocionarDialog } from "./promocionar-dialog";
 import { Paleta, Vendedor, formatPrecio, estadoLabel } from "@/lib/paletas";
 
 function Spec({ label, value }: { label: string; value: string }) {
@@ -19,9 +20,11 @@ function Spec({ label, value }: { label: string; value: string }) {
 export function DetailView({
   paleta,
   vendedor,
+  esDueno,
 }: {
   paleta: Paleta;
   vendedor: Vendedor;
+  esDueno?: boolean;
 }) {
   const titulo = `${paleta.marca} ${paleta.modelo}`;
   const fotos = paleta.fotos.length ? paleta.fotos : [""];
@@ -47,6 +50,14 @@ export function DetailView({
       <Galeria fotos={fotos} titulo={titulo} />
 
       <div className="p-5">
+        {paleta.promocionada && (
+          <p
+            className="mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
+            style={{ background: "#0F5132", color: "#FFFFFF", fontWeight: 700 }}
+          >
+            <Star size={11} aria-hidden /> Destacada
+          </p>
+        )}
         <p className="text-[13px]" style={{ color: "#5B6470" }}>
           {paleta.marca}
         </p>
@@ -100,16 +111,32 @@ export function DetailView({
         </p>
       </div>
 
+      {/* Al dueño no le sirve escribirse por WhatsApp a si mismo: ve lo suyo. */}
       <div className="px-5">
-        <a
-          href={wa}
-          target="_blank"
-          rel="noreferrer"
-          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#0F5132" }}
-        >
-          <MessageCircle size={19} aria-hidden /> Contactar por WhatsApp
-        </a>
+        {!esDueno ? (
+          <a
+            href={wa}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#0F5132" }}
+          >
+            <MessageCircle size={19} aria-hidden /> Contactar por WhatsApp
+          </a>
+        ) : paleta.promocionada ? (
+          <p
+            className="flex items-center justify-center gap-2 rounded-[14px] py-3 text-[14px]"
+            style={{ background: "rgba(15,81,50,0.08)", color: "#0F5132", fontWeight: 600 }}
+          >
+            <Star size={16} aria-hidden /> Promocionada: aparece primero en las búsquedas
+          </p>
+        ) : (
+          <PromocionarDialog
+            id={paleta.id}
+            titulo={titulo}
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5132] bg-[#0F5132]"
+          />
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,13 @@
 // Solo servidor: usa next/headers via lib/supabase/server.
 import { createClient } from "@/lib/supabase/server";
-import { ESTADOS, topePrecio, type Paleta, type Vendedor, type FiltrosFeed } from "@/lib/paletas";
+import {
+  ESTADOS,
+  topePrecio,
+  promoVigente,
+  type Paleta,
+  type Vendedor,
+  type FiltrosFeed,
+} from "@/lib/paletas";
 import { limpiarBusqueda } from "@/lib/validar";
 import { conReintento } from "@/lib/reintentar";
 
@@ -87,16 +94,18 @@ export async function listarMisPaletas(): Promise<Paleta[]> {
     supabase
       .from("paletas")
       .select(
-        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, marcas (nombre)",
+        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, marcas (nombre), promociones (hasta)",
       )
       .eq("vendedor_id", user.id)
       .neq("estado_publicacion", "eliminada")
       .order("created_at", { ascending: false }),
   );
 
-  return (data ?? []).map(({ marcas, ...p }) => ({
+  // La tabla no tiene `promocionada` como la vista: se deriva de las promociones.
+  return (data ?? []).map(({ marcas, promociones, ...p }) => ({
     ...p,
     marca: (marcas as unknown as { nombre: string } | null)?.nombre ?? "",
+    promocionada: promoVigente(promociones as unknown as { hasta: string }[]),
   })) as unknown as Paleta[];
 }
 

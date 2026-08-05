@@ -108,6 +108,23 @@ export const formatPrecio = (n: number): string => PESOS.format(n);
 
 export const foto = (p: Pick<Paleta, "fotos">): string => p.fotos[0] ?? "";
 
+// ---------------------------------------------------------------- promocion
+
+/** Lo que se le cobra al vendedor por aparecer primero en las busquedas. */
+export const PLANES = [
+  { dias: 15, precio: 2000 },
+  { dias: 30, precio: 3000 },
+];
+
+/** Misma regla que el `exists` de la vista paletas_publicas: alcanza con una vigente. */
+export const promoVigente = (
+  promos: { hasta: string }[] | null | undefined,
+  ahora: Date = new Date(),
+): boolean => (promos ?? []).some((p) => new Date(p.hasta) > ahora);
+
+export const vencimiento = (dias: number, desde: Date = new Date()): Date =>
+  new Date(desde.getTime() + dias * 86_400_000);
+
 /** Lado maximo que guardamos: la card mas grande del feed no pasa de 640px. */
 export const MAX_LADO = 1600;
 
