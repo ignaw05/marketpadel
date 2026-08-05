@@ -21,13 +21,18 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
         outlineColor: "#0F5132",
       }}
     >
-      <div className="relative h-52 shrink-0 sm:h-56" style={{ background: "#F2F1ED" }}>
+      {/* aspect-ratio en vez de alto fijo: la grilla queda pareja en cualquier
+          ancho, y 4/5 es la proporcion de una foto vertical de celular. */}
+      <div
+        className="relative shrink-0 overflow-hidden"
+        style={{ background: "#F2F1ED", aspectRatio: "4 / 5" }}
+      >
         <ImageWithFallback
           src={foto(paleta)}
           alt={`${paleta.marca} ${paleta.modelo}`}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           priority={priority}
-          className="object-contain p-3"
+          className="object-cover transition-transform duration-200 group-hover:scale-[1.03]"
         />
         {paleta.promocionada && (
           <span

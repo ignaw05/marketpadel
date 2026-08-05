@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { EstadoPublicacion } from "@/lib/paletas";
+import { PLANES, promoVigente, vencimiento, type EstadoPublicacion } from "@/lib/paletas";
 
 const ESTADOS_VALIDOS: EstadoPublicacion[] = ["activa", "pausada", "vendida"];
 
@@ -33,6 +33,41 @@ export async function cambiarEstado(fd: FormData) {
 
   revalidatePath("/mis-publicaciones");
   revalidatePath("/");
+}
+
+export async function promocionar(fd: FormData) {
+  const id = String(fd.get("id") ?? "");
+  const plan = PLANES.find((p) => p.dias === Number(fd.get("dias")));
+  if (!id || !plan) return;
+
+  const { supabase, uid } = await sesion();
+
+  // Que sea propia, que este activa y que no tenga una promo corriendo. La RLS
+  // solo cubre lo primero: promocionar una pausada no la muestra en ningun lado,
+  // y promocionar dos veces seguidas seria pagar dos veces por lo mismo.
+  const { data: paleta } = await supabase
+    .from("paletas")
+    .select("id, promociones (hasta)")
+    .eq("id", id)
+    .eq("vendedor_id", uid)
+    .eq("estado_publicacion", "activa")
+    .maybeSingle();
+
+  if (!paleta || promoVigente(paleta.promociones)) return;
+
+  // ponytail: sin cobrar. Con MercadoPago esto pasa a hacerlo el webhook, con
+  // origen 'individual' y el pago_id de la preferencia aprobada.
+  const { error } = await supabase.from("promociones").insert({
+    paleta_id: id,
+    origen: "cortesia",
+    hasta: vencimiento(plan.dias).toISOString(),
+  });
+
+  if (error) throw error;
+
+  revalidatePath("/mis-publicaciones");
+  revalidatePath("/");
+  revalidatePath(`/paletas/${id}`);
 }
 
 export async function eliminar(fd: FormData) {

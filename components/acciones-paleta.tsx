@@ -105,10 +105,12 @@ export function AccionesPaleta({ paleta }: { paleta: Paleta }) {
         </>
       )}
 
-      {/* ponytail: <dialog> nativo. Trae foco atrapado, Escape y backdrop sin JS. */}
+      {/* ponytail: <dialog> nativo. Trae foco atrapado, Escape y backdrop sin JS.
+          m-auto porque el preflight de Tailwind pone margin:0 en todo y le come
+          el margin:auto con el que el navegador centra un dialog modal. */}
       <dialog
         ref={dialogo}
-        className="w-[min(380px,calc(100vw-3rem))] rounded-[14px] p-6 backdrop:bg-[rgba(20,23,26,0.45)]"
+        className="m-auto w-[min(380px,calc(100vw-3rem))] rounded-[14px] p-6 backdrop:bg-[rgba(20,23,26,0.45)]"
         style={{ background: "#FFFFFF", color: "#14171A" }}
       >
         <h2 style={{ fontWeight: 700, fontSize: 18 }}>¿Eliminar publicación?</h2>
