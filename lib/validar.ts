@@ -65,8 +65,22 @@ export function validarPaleta(
 
 export type CampoAuth = "email" | "password" | "nombre" | "apellido" | "whatsapp";
 
+/** Lo que va en el campo de prefijo por defecto: celular argentino. */
+export const PREFIJO_WHATSAPP = "+54 9";
+
+/** Junta prefijo y numero en un solo texto para guardar en perfiles.whatsapp. */
+export const armarWhatsapp = (prefijo: string, numero: string) =>
+  `${prefijo.trim()} ${numero.trim()}`.trim();
+
 export function validarAuth(
-  d: { email: string; password: string; nombre: string; apellido: string },
+  d: {
+    email: string;
+    password: string;
+    nombre: string;
+    apellido: string;
+    whatsappPrefijo: string;
+    whatsappNumero: string;
+  },
   modo: "login" | "registro",
 ): Errores<CampoAuth> {
   const e: Errores<CampoAuth> = {};
@@ -82,6 +96,17 @@ export function validarAuth(
   if (modo === "registro") {
     if (!d.nombre) e.nombre = "Escribí tu nombre.";
     if (!d.apellido) e.apellido = "Escribí tu apellido.";
+
+    const digitos = (d.whatsappPrefijo + d.whatsappNumero).replace(/\D/g, "");
+    if (!d.whatsappPrefijo.trim()) e.whatsapp = "Escribí el prefijo del país.";
+    else if (!/^\+?[\d\s-]+$/.test(d.whatsappPrefijo.trim()))
+      e.whatsapp = "El prefijo solo lleva números.";
+    else if (!d.whatsappNumero.trim()) e.whatsapp = "Escribí tu número de WhatsApp.";
+    else if (!/^[\d\s-]+$/.test(d.whatsappNumero.trim()))
+      e.whatsapp = "El número solo lleva dígitos.";
+    else if (digitos.length < 10) e.whatsapp = "Faltan dígitos en el número.";
+    // E.164 no admite mas de 15 digitos en total.
+    else if (digitos.length > 15) e.whatsapp = "Ese número tiene dígitos de más.";
   }
 
   return e;

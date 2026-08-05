@@ -39,6 +39,15 @@ function Error({ id, mensaje }: { id: string; mensaje?: string }) {
   );
 }
 
+/** El asterisco es decorativo: el dato real lo da `required` en el input. */
+function Obligatorio() {
+  return (
+    <span aria-hidden="true" style={{ color: "#D4183D" }}>
+      {" *"}
+    </span>
+  );
+}
+
 function Campo({
   id,
   label,
@@ -57,6 +66,7 @@ function Campo({
       <div className="flex items-center justify-between">
         <label className="mb-1.5 block text-[14px]" htmlFor={id} style={{ color: "#14171A" }}>
           {label}
+          <Obligatorio />
         </label>
         {extra}
       </div>
@@ -131,7 +141,8 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
     <form action={formAction} className="mx-auto max-w-[640px] px-4 pb-28 pt-6 md:px-6 md:pb-10" noValidate>
       <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 24 }}>Publicar paleta</h1>
       <p className="mt-1 text-[14px]" style={{ color: "#5B6470" }}>
-        Completá los datos y en minutos tu paleta queda publicada.
+        Completá los datos y en minutos tu paleta queda publicada. Los campos con{" "}
+        <span style={{ color: "#D4183D" }}>*</span> son obligatorios.
       </p>
 
       <div
@@ -152,7 +163,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
         {/* Fotos */}
         <fieldset>
           <legend className="mb-1.5 text-[14px]" style={{ color: "#14171A" }}>
-            Fotos (hasta 4)
+            Fotos (hasta 4)<Obligatorio />
           </legend>
           <div className="grid grid-cols-4 gap-2.5">
             {fotos.map(({ url }, i) => (
@@ -223,6 +234,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
             <select
               id="marca_id"
               name="marca_id"
+              required
               defaultValue={v.marca_id ?? ""}
               aria-invalid={!!e.marca_id}
               className={campoClass}
@@ -243,6 +255,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
             <input
               id="modelo"
               name="modelo"
+              required
               defaultValue={v.modelo}
               maxLength={120}
               placeholder="Ej: Vertex 04"
@@ -256,7 +269,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
         {/* Forma */}
         <fieldset>
           <legend className="mb-1.5 text-[14px]" style={{ color: "#14171A" }}>
-            Forma
+            Forma<Obligatorio />
           </legend>
           <input type="hidden" name="forma" value={forma} />
           <div className="grid grid-cols-3 gap-2.5">
@@ -321,6 +334,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
             <select
               id="anio"
               name="anio"
+              required
               defaultValue={v.anio ?? ""}
               aria-invalid={!!e.anio}
               className={campoClass}
@@ -341,6 +355,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
             <input
               id="precio"
               name="precio"
+              required
               value={precioFmt}
               onChange={(ev) => setPrecio(ev.target.value)}
               placeholder="$ 0"
@@ -357,6 +372,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
             <select
               id="provincia"
               name="provincia"
+              required
               defaultValue={v.provincia ?? ""}
               aria-invalid={!!e.provincia}
               className={campoClass}
@@ -375,6 +391,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
             <input
               id="ciudad"
               name="ciudad"
+              required
               defaultValue={v.ciudad}
               placeholder="Ej: Rosario"
               aria-invalid={!!e.ciudad}
@@ -397,6 +414,7 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
           <textarea
             id="descripcion"
             name="descripcion"
+            required
             value={desc}
             maxLength={300}
             onChange={(ev) => setDesc(ev.target.value)}

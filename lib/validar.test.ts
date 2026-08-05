@@ -1,5 +1,12 @@
 import { test, expect } from "vitest";
-import { validarPaleta, validarAuth, limpiarBusqueda, type DatosPaleta } from "./validar";
+import {
+  validarPaleta,
+  validarAuth,
+  limpiarBusqueda,
+  armarWhatsapp,
+  PREFIJO_WHATSAPP,
+  type DatosPaleta,
+} from "./validar";
 import { formatPrecio, estadoLabel, foto } from "./paletas";
 
 const ok = (): DatosPaleta => ({
@@ -78,23 +85,60 @@ test("las fotos: al menos una, hasta 4, imagenes, menos de 5 MB", () => {
 
 // --- auth -----------------------------------------------------------------
 
+const auth = () => ({
+  email: "ana@marketpadel.com.ar",
+  password: "unaClaveLarga",
+  nombre: "Ana",
+  apellido: "Diaz",
+  whatsappPrefijo: PREFIJO_WHATSAPP,
+  whatsappNumero: "11 5555 5555",
+});
+
+test("un registro completo no tiene errores", () => {
+  expect(validarAuth(auth(), "registro")).toEqual({});
+});
+
 test("login solo pide email y contraseña", () => {
-  const d = { email: "a@b.com", password: "x", nombre: "", apellido: "" };
+  const d = { ...auth(), password: "x", nombre: "", apellido: "", whatsappNumero: "" };
   expect(validarAuth(d, "login")).toEqual({});
-  // en registro esa misma contraseña es muy corta y falta el nombre
+  // los mismos datos en registro fallan por todo lo que login no mira
   const e = validarAuth(d, "registro");
   expect(e.password).toBeDefined();
   expect(e.nombre).toBeDefined();
   expect(e.apellido).toBeDefined();
+  expect(e.whatsapp).toBeDefined();
 });
 
 test("emails invalidos se rechazan", () => {
-  const base = { password: "unaClaveLarga", nombre: "A", apellido: "B" };
   for (const email of ["", "a@b", "sinarroba.com", "a b@c.com", "@b.com"]) {
-    expect(validarAuth({ ...base, email }, "registro").email).toBeDefined();
+    expect(validarAuth({ ...auth(), email }, "registro").email).toBeDefined();
   }
-  expect(validarAuth({ ...base, email: "ana@marketpadel.com.ar" }, "registro").email)
-    .toBeUndefined();
+  expect(validarAuth(auth(), "registro").email).toBeUndefined();
+});
+
+test("el whatsapp exige numero y cuenta los digitos con el prefijo", () => {
+  const con = (whatsappNumero: string, whatsappPrefijo = PREFIJO_WHATSAPP) =>
+    validarAuth({ ...auth(), whatsappPrefijo, whatsappNumero }, "registro").whatsapp;
+
+  expect(con("")).toBeDefined();
+  expect(con("   ")).toBeDefined();
+  expect(con("11 5555")).toBeDefined(); // +5491155555 = 9 digitos, faltan
+  expect(con("1".repeat(14))).toBeDefined(); // pasa los 15 de E.164
+  expect(con("11 5555 5555")).toBeUndefined();
+  expect(con("11-5555-5555")).toBeUndefined(); // guiones sirven
+  expect(con("no tengo")).toBeDefined(); // letras en el numero
+
+  // borrar el prefijo es un error, no vuelve solo a +54 9
+  expect(con("1155555555", "")).toBeDefined();
+  expect(con("11 5555 5555", "abc")).toBeDefined();
+  expect(con("555 1234", "+1")).toBeDefined(); // 8 digitos, corto
+  expect(con("305 555 1234", "+1")).toBeUndefined(); // otro pais anda
+});
+
+test("el whatsapp se guarda como un solo texto con el prefijo adelante", () => {
+  expect(armarWhatsapp("+54 9", "11 5555 5555")).toBe("+54 9 11 5555 5555");
+  expect(armarWhatsapp("  +54 9  ", "  1155555555 ")).toBe("+54 9 1155555555");
+  expect(armarWhatsapp("", "1155555555")).toBe("1155555555");
 });
 
 // --- busqueda -------------------------------------------------------------
