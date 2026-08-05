@@ -8,7 +8,14 @@ import {
   PREFIJO_WHATSAPP,
   type DatosPaleta,
 } from "./validar";
-import { formatPrecio, estadoLabel, foto, topePrecio, PRECIO_TOPE } from "./paletas";
+import {
+  formatPrecio,
+  estadoLabel,
+  foto,
+  topePrecio,
+  medidas,
+  PRECIO_TOPE,
+} from "./paletas";
 
 const ok = (): DatosPaleta => ({
   marca_id: 3,
@@ -166,6 +173,14 @@ test("el tope de precio ignora lo que no filtra nada", () => {
   expect(topePrecio("caro")).toBe(null); // ?precioMax=caro no tiene que romper la query
   expect(topePrecio("-1")).toBe(null);
   expect(topePrecio(String(PRECIO_TOPE))).toBe(null); // el slider al maximo es "sin tope"
+});
+
+test("achicar respeta la proporcion y no agranda", () => {
+  // vertical de celular: manda el lado largo
+  expect(medidas(3024, 4032)).toEqual({ ancho: 1200, alto: 1600 });
+  expect(medidas(4032, 3024)).toEqual({ ancho: 1600, alto: 1200 });
+  expect(medidas(1600, 1600)).toEqual({ ancho: 1600, alto: 1600 });
+  expect(medidas(800, 600)).toEqual({ ancho: 800, alto: 600 }); // ya es chica
 });
 
 test("la etiqueta de estado cubre todos los tramos", () => {

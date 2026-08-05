@@ -12,6 +12,7 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import {
   FORMAS,
@@ -19,8 +20,9 @@ import {
   PROVINCIAS,
   Forma,
   estadoLabel,
+  medidas,
 } from "@/lib/paletas";
-import { validarFotos } from "@/lib/validar";
+import { validarFotos, MAX_BYTES } from "@/lib/validar";
 import { createClient } from "@/lib/supabase/client";
 import { publicar, type PublicarState } from "@/app/(main)/publicar/actions";
 
@@ -78,6 +80,33 @@ function Campo({
       <Error id={`${id}-error`} mensaje={error} />
     </div>
   );
+}
+
+/** Tope de lo que aceptamos decodificar, antes de achicar. */
+const MAX_BYTES_ORIGEN = 25 * 1024 * 1024;
+
+/**
+ * Reencoda a WebP en un canvas: una foto de celular pasa de ~5 MB a ~200 KB,
+ * que con datos moviles es la diferencia entre subir y abandonar.
+ * ponytail: sin libreria de compresion. Si el navegador no encoda WebP, devuelve
+ * la original y sigue andando.
+ */
+async function achicar(file: File, bitmap: ImageBitmap): Promise<File> {
+  const { ancho, alto } = medidas(bitmap.width, bitmap.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = ancho;
+  canvas.height = alto;
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, ancho, alto);
+
+  const blob = await new Promise<Blob | null>((listo) =>
+    canvas.toBlob(listo, "image/webp", 0.82),
+  );
+  // toBlob cae a PNG cuando no sabe encodar el tipo pedido, y ese PNG pesa mas
+  // que la foto original.
+  if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+  return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", {
+    type: "image/webp",
+  });
 }
 
 function MoverFoto({
@@ -167,20 +196,63 @@ export function PublishScreen({
   const e = state.campos ?? {};
 
   const [drag, setDrag] = useState(false);
+  const [aviso, setAviso] = useState<string>();
+  const [procesando, setProcesando] = useState(false);
   const [forma, setForma] = useState<Forma>((v.forma as Forma) || "Diamante");
   const [estado, setEstado] = useState(Number(v.estado) || 9);
   const [precio, setPrecio] = useState(v.precio ?? "");
   const [desc, setDesc] = useState(v.descripcion ?? "");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const agregar = (files: FileList | null) => {
+  const agregar = async (files: FileList | null) => {
     if (!files) return;
-    const nuevas = Array.from(files)
-      .slice(0, 4 - fotos.length)
-      .map((file) => ({ file, url: URL.createObjectURL(file) }));
-    setFotos([...fotos, ...nuevas]);
+    const candidatos = Array.from(files).slice(0, 4 - fotos.length);
     // Sin esto, volver a elegir el mismo archivo no dispara el change.
     if (fileRef.current) fileRef.current.value = "";
+
+    setProcesando(true);
+    const nuevas: typeof fotos = [];
+    const ilegibles: string[] = [];
+    const pesadas: string[] = [];
+
+    for (const file of candidatos) {
+      // Antes de decodificar: un archivo enorme cuelga la pestaña del celular.
+      if (file.size > MAX_BYTES_ORIGEN) {
+        pesadas.push(file.name);
+        continue;
+      }
+      // Si este navegador no la puede decodificar, el comprador tampoco la va a
+      // ver: pasa con los .heic del iPhone en todo lo que no sea Safari.
+      // from-image: sin esto las fotos verticales del celular salen acostadas,
+      // porque el WebP que generamos no se lleva el EXIF con la rotación.
+      const bitmap = await createImageBitmap(file, {
+        imageOrientation: "from-image",
+      }).catch(() => null);
+      if (!bitmap) {
+        ilegibles.push(file.name);
+        continue;
+      }
+
+      const liviana = await achicar(file, bitmap);
+      bitmap.close();
+      if (liviana.size > MAX_BYTES) {
+        pesadas.push(file.name);
+        continue;
+      }
+      nuevas.push({ file: liviana, url: URL.createObjectURL(liviana) });
+    }
+
+    setFotos([...fotos, ...nuevas]);
+    setAviso(
+      [
+        ilegibles.length &&
+          `No pudimos leer ${ilegibles.join(", ")}. Si son fotos del iPhone (.heic), abrilas y exportalas como JPG antes de subirlas.`,
+        pesadas.length && `${pesadas.join(", ")}: pesan demasiado, probá con fotos más chicas.`,
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined,
+    );
+    setProcesando(false);
   };
 
   const sacar = (i: number) => {
@@ -292,6 +364,8 @@ export function PublishScreen({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
+                disabled={procesando}
+                aria-busy={procesando}
                 onDragOver={(ev) => {
                   ev.preventDefault();
                   setDrag(true);
@@ -306,31 +380,41 @@ export function PublishScreen({
                 style={{
                   aspectRatio: "1",
                   width: "100%",
-                  border: `1.5px dashed ${drag ? "#0F5132" : e.fotos ? "#D4183D" : "#E6E4DF"}`,
+                  border: `1.5px dashed ${drag ? "#0F5132" : e.fotos || aviso ? "#D4183D" : "#E6E4DF"}`,
                   background: drag ? "rgba(15,81,50,0.04)" : "#FAFAF8",
                   color: "#5B6470",
                   outlineColor: "#0F5132",
                 }}
               >
-                {fotos.length === 0 ? (
+                {procesando ? (
+                  <Loader2 size={22} className="animate-spin" aria-hidden />
+                ) : fotos.length === 0 ? (
                   <UploadCloud size={22} aria-hidden />
                 ) : (
                   <ImagePlus size={20} aria-hidden />
                 )}
-                <span className="text-[11px]">Arrastrá o subí</span>
+                <span className="text-[11px]">
+                  {procesando ? "Preparando…" : "Arrastrá o subí"}
+                </span>
               </button>
             )}
           </div>
           <input
             ref={fileRef}
-            name="fotos"
             type="file"
-            accept="image/*"
+            // Lista explicita en vez de image/*: iOS convierte el HEIC a JPG solo
+            // cuando el accept no lo incluye.
+            accept="image/jpeg,image/png,image/webp"
             multiple
             hidden
             onChange={(ev) => agregar(ev.target.files)}
           />
           <Error id="fotos-error" mensaje={e.fotos} />
+          {aviso && (
+            <p role="alert" className="mt-1 text-[13px]" style={{ color: "#D4183D" }}>
+              {aviso}
+            </p>
+          )}
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
