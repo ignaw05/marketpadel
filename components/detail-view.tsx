@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, MapPin, MessageCircle, Eye } from "lucide-react";
-import { ImageWithFallback } from "./image-with-fallback";
+import { Galeria } from "./galeria";
 import { Paleta, Vendedor, formatPrecio, estadoLabel } from "@/lib/paletas";
 
 function Spec({ label, value }: { label: string; value: string }) {
@@ -44,24 +44,7 @@ export function DetailView({
         </Link>
       </div>
 
-      {/* ponytail: galeria con scroll-snap de CSS, sin libreria de carousel */}
-      <div className="flex snap-x snap-mandatory overflow-x-auto">
-        {fotos.map((f, i) => (
-          <div
-            key={i}
-            className="relative w-full shrink-0 snap-center"
-            style={{ background: "#F2F1ED", aspectRatio: "4 / 3" }}
-          >
-            <ImageWithFallback
-              src={f}
-              alt={fotos.length > 1 ? `${titulo}, foto ${i + 1} de ${fotos.length}` : titulo}
-              sizes="(max-width: 720px) 100vw, 720px"
-              priority={i === 0}
-              className="object-contain p-6"
-            />
-          </div>
-        ))}
-      </div>
+      <Galeria fotos={fotos} titulo={titulo} />
 
       <div className="p-5">
         <p className="text-[13px]" style={{ color: "#5B6470" }}>
