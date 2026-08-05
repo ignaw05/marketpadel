@@ -14,7 +14,10 @@ import {
   foto,
   topePrecio,
   medidas,
+  promoVigente,
+  vencimiento,
   PRECIO_TOPE,
+  PLANES,
 } from "./paletas";
 
 const ok = (): DatosPaleta => ({
@@ -194,4 +197,31 @@ test("la etiqueta de estado cubre todos los tramos", () => {
 test("foto() no explota cuando la paleta no tiene ninguna", () => {
   expect(foto({ fotos: [] })).toBe("");
   expect(foto({ fotos: ["a.webp", "b.webp"] })).toBe("a.webp");
+});
+
+// --- promocion ------------------------------------------------------------
+
+const AHORA = new Date("2026-08-05T12:00:00Z");
+const enDias = (n: number) => vencimiento(n, AHORA).toISOString();
+
+test("una promocion vencida no destaca la publicacion", () => {
+  expect(promoVigente(null, AHORA)).toBe(false);
+  expect(promoVigente(undefined, AHORA)).toBe(false);
+  expect(promoVigente([], AHORA)).toBe(false);
+  expect(promoVigente([{ hasta: enDias(-1) }], AHORA)).toBe(false);
+  expect(promoVigente([{ hasta: enDias(1) }], AHORA)).toBe(true);
+  // una vieja y una viva: alcanza con la viva, igual que el exists de la vista
+  expect(promoVigente([{ hasta: enDias(-30) }, { hasta: enDias(10) }], AHORA)).toBe(true);
+});
+
+test("el vencimiento cae a los dias del plan", () => {
+  expect(vencimiento(15, AHORA).toISOString()).toBe("2026-08-20T12:00:00.000Z");
+  expect(vencimiento(30, AHORA).toISOString()).toBe("2026-09-04T12:00:00.000Z");
+});
+
+test("los planes son 15 dias a $2000 y 30 a $3000", () => {
+  expect(PLANES).toEqual([
+    { dias: 15, precio: 2000 },
+    { dias: 30, precio: 3000 },
+  ]);
 });

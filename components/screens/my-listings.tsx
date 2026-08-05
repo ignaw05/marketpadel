@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { PackageOpen, Plus, Eye, CheckCircle2 } from "lucide-react";
+import { PackageOpen, Plus, Eye, CheckCircle2, Star } from "lucide-react";
 import { ImageWithFallback } from "../image-with-fallback";
 import { AccionesPaleta } from "../acciones-paleta";
+import { PromocionarDialog } from "../promocionar-dialog";
 import { Paleta, formatPrecio, foto } from "@/lib/paletas";
 
 function Metric({ label, value }: { label: string; value: string }) {
@@ -29,6 +30,10 @@ const BADGE = {
 
 function Row({ paleta }: { paleta: Paleta }) {
   const badge = BADGE[paleta.estado_publicacion ?? "activa"];
+  const titulo = `${paleta.marca} ${paleta.modelo}`;
+  // Promocionar una pausada o vendida no la muestra en ningun lado: no se ofrece.
+  const puedePromocionar =
+    (paleta.estado_publicacion ?? "activa") === "activa" && !paleta.promocionada;
 
   return (
     <div
@@ -53,23 +58,42 @@ function Row({ paleta }: { paleta: Paleta }) {
           className="block truncate text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
           style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
         >
-          {paleta.marca} {paleta.modelo}
+          {titulo}
         </Link>
         <p className="text-[15px]" style={{ color: "#0F5132", fontWeight: 700 }}>
           {formatPrecio(paleta.precio)}
         </p>
-        <div className="mt-0.5 flex items-center gap-2 text-[12px]" style={{ color: "#5B6470" }}>
+        <div
+          className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]"
+          style={{ color: "#5B6470" }}
+        >
           <span
             className="rounded-full px-2 py-0.5"
             style={{ background: badge.fondo, color: badge.color, fontWeight: 600 }}
           >
             {badge.texto}
           </span>
+          {paleta.promocionada && (
+            <span
+              className="flex items-center gap-1 rounded-full px-2 py-0.5"
+              style={{ background: "#0F5132", color: "#FFFFFF", fontWeight: 600 }}
+            >
+              <Star size={11} aria-hidden /> Promocionada
+            </span>
+          )}
           <span className="flex items-center gap-1">
             <Eye size={12} aria-hidden /> {paleta.visitas.toLocaleString("es-AR")}
             <span className="sr-only">visitas</span>
           </span>
         </div>
+
+        {puedePromocionar && (
+          <PromocionarDialog
+            id={paleta.id}
+            titulo={titulo}
+            className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[#0F5132] px-3.5 text-[13px] font-semibold text-[#0F5132] hover:bg-[rgba(15,81,50,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5132]"
+          />
+        )}
       </div>
 
       <AccionesPaleta paleta={paleta} />
