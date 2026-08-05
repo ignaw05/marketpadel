@@ -1,16 +1,18 @@
 import { notFound } from "next/navigation";
 import { DetailView } from "@/components/detail-view";
-import { PALETAS, MIS_PALETAS } from "@/lib/paletas";
+import { ContarVisita } from "@/components/contar-visita";
+import { obtenerPaleta } from "@/lib/paletas-db";
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const paleta = [...PALETAS, ...MIS_PALETAS].find((p) => p.id === id);
+  const resultado = await obtenerPaleta(id);
 
-  if (!paleta) notFound();
+  if (!resultado) notFound();
 
-  return <DetailView paleta={paleta} />;
+  return (
+    <>
+      <ContarVisita id={id} />
+      <DetailView paleta={resultado.paleta} vendedor={resultado.vendedor} />
+    </>
+  );
 }

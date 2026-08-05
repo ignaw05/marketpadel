@@ -1,42 +1,50 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { ImageOff } from "lucide-react";
 
-const ERROR_IMG_SRC =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIuMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzLjciPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNiIvPjxwYXRoIGQ9Im0xNiA1OCAxNi0xOCAzMiAzMiIvPjxjaXJjbGUgY3g9IjUzIiBjeT0iMzUiIHI9IjciLz48L3N2Zz4KCg==";
+/**
+ * Foto de producto. Usa next/image con `fill`, asi que el padre tiene que ser
+ * `relative` y tener alto propio. Cae a un placeholder si no hay foto o si la
+ * URL del bucket ya no resuelve.
+ */
+export function ImageWithFallback({
+  src,
+  alt,
+  sizes,
+  className,
+  priority,
+}: {
+  src?: string;
+  alt: string;
+  sizes: string;
+  className?: string;
+  priority?: boolean;
+}) {
+  const [falló, setFalló] = useState(false);
 
-export function ImageWithFallback(
-  props: React.ImgHTMLAttributes<HTMLImageElement>,
-) {
-  const [didError, setDidError] = useState(false);
-  const { src, alt, style, className, ...rest } = props;
-
-  if (didError) {
+  if (!src || falló) {
     return (
       <div
-        className={`inline-block bg-gray-100 text-center align-middle ${className ?? ""}`}
-        style={style}
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ background: "#F2F1ED" }}
       >
-        <div className="flex items-center justify-center w-full h-full">
-          <img
-            src={ERROR_IMG_SRC}
-            alt="Error loading image"
-            {...rest}
-            data-original-url={src}
-          />
-        </div>
+        <ImageOff size={28} style={{ color: "#9AA1AA" }} aria-hidden />
+        <span className="sr-only">Sin foto</span>
       </div>
     );
   }
 
   return (
-    <img
+    <Image
       src={src}
       alt={alt}
+      fill
+      sizes={sizes}
+      priority={priority}
       className={className}
-      style={style}
-      {...rest}
-      onError={() => setDidError(true)}
+      onError={() => setFalló(true)}
     />
   );
 }
