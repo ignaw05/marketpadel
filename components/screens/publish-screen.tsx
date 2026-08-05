@@ -167,8 +167,10 @@ function CampoMarca({
 
   const elegir = (nombre: string) => {
     onChange(nombre);
-    setAbierta(false);
+    // El focus() dispara el onFocus del input, que reabre la lista: por eso
+    // el cierre va despues, asi es lo ultimo que se aplica en el batch.
     inputRef.current?.focus();
+    setAbierta(false);
   };
 
   return (
