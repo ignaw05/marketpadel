@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Search, Plus, LayoutGrid, LogOut, LogIn, UserRound } from "lucide-react";
+import { Search, Plus, LayoutGrid, LogOut, LogIn, UserRound, ArrowLeft } from "lucide-react";
 import { Logo } from "./logo";
 import { cerrarSesion } from "@/app/auth/actions";
 
@@ -51,6 +51,21 @@ function Buscador({ id, className }: { id: string; className?: string }) {
   );
 }
 
+/** Ocupa el lugar del buscador fuera del feed: ahi buscar paletas no hace nada. */
+function VolverAlMercado({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      <Link
+        href="/"
+        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+      >
+        <ArrowLeft size={18} aria-hidden /> Volver al mercado
+      </Link>
+    </div>
+  );
+}
+
 export function Header({
   usuario,
 }: {
@@ -58,6 +73,7 @@ export function Header({
 }) {
   const pathname = usePathname();
   const enMisPaletas = pathname === "/mis-publicaciones";
+  const enFeed = pathname === "/";
   const iniciales = usuario
     ? (`${usuario.nombre[0] ?? ""}${usuario.apellido[0] ?? ""}`.toUpperCase() || "?")
     : "?";
@@ -78,7 +94,11 @@ export function Header({
         </Link>
 
         {/* min-w-0: sin esto el flex item no baja de su ancho de contenido y empuja al header fuera de pantalla */}
-        <Buscador id="buscar-desktop" className="hidden min-w-0 flex-1 md:block" />
+        {enFeed ? (
+          <Buscador id="buscar-desktop" className="hidden min-w-0 flex-1 md:block" />
+        ) : (
+          <VolverAlMercado className="hidden min-w-0 flex-1 md:block" />
+        )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Link
@@ -165,7 +185,11 @@ export function Header({
         </div>
       </div>
 
-      <Buscador id="buscar-mobile" className="px-4 pb-3 md:hidden" />
+      {enFeed ? (
+        <Buscador id="buscar-mobile" className="px-4 pb-3 md:hidden" />
+      ) : (
+        <VolverAlMercado className="px-4 pb-3 md:hidden" />
+      )}
     </header>
   );
 }

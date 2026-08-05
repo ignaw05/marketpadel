@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, MapPin, MessageCircle, Eye, Star } from "lucide-react";
+import { MapPin, MessageCircle, Eye, Star } from "lucide-react";
 import { Galeria } from "./galeria";
 import { PromocionarDialog } from "./promocionar-dialog";
 import { Paleta, Vendedor, formatPrecio, estadoLabel } from "@/lib/paletas";
@@ -39,16 +39,7 @@ export function DetailView({
 
   return (
     <div className="mx-auto max-w-[720px] pb-10">
-      <div className="px-4 py-3 md:px-6">
-        <Link
-          href="/"
-          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
-        >
-          <ArrowLeft size={18} aria-hidden /> Volver
-        </Link>
-      </div>
-
+      {/* el "Volver al mercado" lo pone el header en toda pantalla que no sea el feed */}
       <Galeria fotos={fotos} titulo={titulo} />
 
       <div className="p-5">
