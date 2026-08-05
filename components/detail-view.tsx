@@ -21,10 +21,12 @@ export function DetailView({
   paleta,
   vendedor,
   esDueno,
+  logueado,
 }: {
   paleta: Paleta;
   vendedor: Vendedor;
   esDueno?: boolean;
+  logueado?: boolean;
 }) {
   const titulo = `${paleta.marca} ${paleta.modelo}`;
   const fotos = paleta.fotos.length ? paleta.fotos : [""];
@@ -111,18 +113,35 @@ export function DetailView({
         </p>
       </div>
 
-      {/* Al dueño no le sirve escribirse por WhatsApp a si mismo: ve lo suyo. */}
+      {/* Al dueño no le sirve escribirse por WhatsApp a si mismo: ve lo suyo.
+          Sin sesion se ve la publicacion entera pero no el contacto: el href con
+          el telefono ni se renderiza, asi que el numero no viaja al cliente. */}
       <div className="px-5">
         {!esDueno ? (
-          <a
-            href={wa}
-            target="_blank"
-            rel="noreferrer"
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#0F5132" }}
-          >
-            <MessageCircle size={19} aria-hidden /> Contactar por WhatsApp
-          </a>
+          logueado ? (
+            <a
+              href={wa}
+              target="_blank"
+              rel="noreferrer"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+              style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#0F5132" }}
+            >
+              <MessageCircle size={19} aria-hidden /> Contactar por WhatsApp
+            </a>
+          ) : (
+            <>
+              <Link
+                href={`/auth?next=${encodeURIComponent(`/paletas/${paleta.id}`)}`}
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#0F5132" }}
+              >
+                <MessageCircle size={19} aria-hidden /> Iniciá sesión para contactar
+              </Link>
+              <p className="mt-2 text-center text-[13px]" style={{ color: "#5B6470" }}>
+                Es gratis y te lleva de vuelta a esta paleta.
+              </p>
+            </>
+          )
         ) : paleta.promocionada ? (
           <p
             className="flex items-center justify-center gap-2 rounded-[14px] py-3 text-[14px]"

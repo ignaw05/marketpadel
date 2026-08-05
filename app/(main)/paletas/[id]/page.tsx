@@ -22,6 +22,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         paleta={resultado.paleta}
         vendedor={resultado.vendedor}
         esDueno={data.user?.id === resultado.paleta.vendedor_id}
+        logueado={!!data.user}
       />
     </>
   );
