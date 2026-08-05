@@ -15,7 +15,6 @@ import {
   topePrecio,
   medidas,
   promoVigente,
-  vencimiento,
   PRECIO_TOPE,
   PLANES,
 } from "./paletas";
@@ -202,7 +201,8 @@ test("foto() no explota cuando la paleta no tiene ninguna", () => {
 // --- promocion ------------------------------------------------------------
 
 const AHORA = new Date("2026-08-05T12:00:00Z");
-const enDias = (n: number) => vencimiento(n, AHORA).toISOString();
+const enDias = (n: number) =>
+  new Date(AHORA.getTime() + n * 86_400_000).toISOString();
 
 test("una promocion vencida no destaca la publicacion", () => {
   expect(promoVigente(null, AHORA)).toBe(false);
@@ -212,11 +212,6 @@ test("una promocion vencida no destaca la publicacion", () => {
   expect(promoVigente([{ hasta: enDias(1) }], AHORA)).toBe(true);
   // una vieja y una viva: alcanza con la viva, igual que el exists de la vista
   expect(promoVigente([{ hasta: enDias(-30) }, { hasta: enDias(10) }], AHORA)).toBe(true);
-});
-
-test("el vencimiento cae a los dias del plan", () => {
-  expect(vencimiento(15, AHORA).toISOString()).toBe("2026-08-20T12:00:00.000Z");
-  expect(vencimiento(30, AHORA).toISOString()).toBe("2026-09-04T12:00:00.000Z");
 });
 
 test("los planes son 15 dias a $2000 y 30 a $3000", () => {

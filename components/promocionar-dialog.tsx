@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useFormStatus } from "react-dom";
-import { Star, TrendingUp } from "lucide-react";
+import { CreditCard, Star, TrendingUp } from "lucide-react";
 import { promocionar } from "@/app/(main)/mis-publicaciones/actions";
 import { PLANES, formatPrecio } from "@/lib/paletas";
 
@@ -15,7 +15,7 @@ function BotonConfirmar() {
       className="min-h-[44px] flex-1 rounded-[14px] py-2.5 text-[14px] text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
     >
-      {pending ? "Promocionando…" : "Promocionar"}
+      {pending ? "Redirigiendo…" : "Continuar al pago"}
     </button>
   );
 }
@@ -97,6 +97,9 @@ export function PromocionarDialog({
             style={{ color: "#5B6470" }}
           >
             <TrendingUp size={13} aria-hidden /> Al terminar el período vuelve al orden normal.
+          </p>
+          <p className="mt-1.5 flex items-center gap-1.5 text-[12px]" style={{ color: "#5B6470" }}>
+            <CreditCard size={13} aria-hidden /> Te llevamos a MercadoPago para pagar.
           </p>
 
           <div className="mt-5 flex gap-3">
