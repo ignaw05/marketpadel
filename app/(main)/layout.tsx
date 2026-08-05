@@ -1,14 +1,28 @@
 import { Suspense } from "react";
-import { AuthGuard } from "@/components/auth-guard";
+import { redirect } from "next/navigation";
 import { Header } from "@/components/header";
+import { createClient } from "@/lib/supabase/server";
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/auth");
+
+  const { data: perfil } = await supabase
+    .from("perfiles")
+    .select("nombre, apellido")
+    .eq("id", user.id)
+    .maybeSingle();
+
   return (
-    <AuthGuard>
+    <>
       <Suspense fallback={null}>
-        <Header />
+        <Header nombre={perfil?.nombre ?? ""} apellido={perfil?.apellido ?? ""} />
       </Suspense>
       {children}
-    </AuthGuard>
+    </>
   );
 }
