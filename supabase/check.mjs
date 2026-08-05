@@ -173,7 +173,29 @@ try {
   assert.equal(tocada.length, 0, "otro usuario no deberia poder editar");
   paso("RLS bloquea editar la paleta de otro");
 
-  // 10. pausar la saca del feed publico (accion cambiarEstado)
+  // 10. promocionar (accion promocionar, origen 'cortesia' hasta que entre MP)
+  const hasta = new Date(Date.now() + 15 * 86_400_000).toISOString();
+
+  const { error: ePromoAjena } = await b.cliente
+    .from("promociones")
+    .insert({ paleta_id: creada.id, origen: "cortesia", hasta });
+  assert.ok(ePromoAjena, "otro usuario no deberia poder promocionar tu paleta");
+  paso("RLS bloquea promocionar la paleta de otro");
+
+  const { error: ePromo } = await a.cliente
+    .from("promociones")
+    .insert({ paleta_id: creada.id, origen: "cortesia", hasta });
+  assert.equal(ePromo, null, `promocionar: ${ePromo?.message}`);
+
+  const { data: destacada } = await anon
+    .from("paletas_publicas")
+    .select("promocionada")
+    .eq("id", creada.id)
+    .single();
+  assert.equal(destacada.promocionada, true, "la vista tendria que verla promocionada");
+  paso("promocionar la propia la marca como destacada en el feed");
+
+  // 11. pausar la saca del feed publico (accion cambiarEstado)
   await a.cliente
     .from("paletas")
     .update({ estado_publicacion: "pausada" })
@@ -187,11 +209,11 @@ try {
   assert.equal(pausada, null, "una pausada no deberia aparecer en el feed");
   paso("pausar saca la publicacion del feed publico");
 
-  // 11. pero sigue en "mis publicaciones" (listarMisPaletas)
+  // 12. pero sigue en "mis publicaciones" (listarMisPaletas)
   const { data: mias, error: eMias } = await a.cliente
     .from("paletas")
     .select(
-      "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, marcas (nombre)",
+      "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, marcas (nombre), promociones (hasta)",
     )
     .eq("vendedor_id", a.uid)
     .neq("estado_publicacion", "eliminada");
@@ -199,9 +221,10 @@ try {
   assert.equal(mias.length, 1);
   assert.equal(mias[0].marcas.nombre, "Bullpadel");
   assert.equal(mias[0].estado_publicacion, "pausada");
-  paso("listarMisPaletas ve la pausada y resuelve la marca");
+  assert.equal(mias[0].promociones.length, 1, "el embed de promociones para el badge");
+  paso("listarMisPaletas ve la pausada, la marca y su promocion");
 
-  // 12. borrar la paleta y su foto (accion eliminar)
+  // 13. borrar la paleta y su foto (accion eliminar)
   await a.cliente.from("paletas").delete().eq("id", creada.id).eq("vendedor_id", a.uid);
   const rutaDerivada = publicUrl.split("/paletas/").pop();
   assert.equal(rutaDerivada, ruta, "la ruta que deriva la accion eliminar");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   Diamond,
@@ -192,17 +192,42 @@ export function PublishScreen({
   };
 
   const [state, formAction] = useActionState<PublicarState, FormData>(subirYPublicar, {});
-  const v = state.valores ?? {};
   const e = state.campos ?? {};
 
   const [drag, setDrag] = useState(false);
   const [aviso, setAviso] = useState<string>();
   const [procesando, setProcesando] = useState(false);
-  const [forma, setForma] = useState<Forma>((v.forma as Forma) || "Diamante");
-  const [estado, setEstado] = useState(Number(v.estado) || 9);
-  const [precio, setPrecio] = useState(v.precio ?? "");
-  const [desc, setDesc] = useState(v.descripcion ?? "");
+  // Todos los campos viven en estado de React. React 19 resetea el <form>
+  // cuando termina la accion, asi que lo que quede en el DOM se pierde: con un
+  // error de validacion el usuario tendria que reescribir todo.
+  const [marca, setMarca] = useState("");
+  const [modelo, setModelo] = useState("");
+  const [anio, setAnio] = useState("");
+  const [provincia, setProvincia] = useState("");
+  const [ciudad, setCiudad] = useState("");
+  const [forma, setForma] = useState<Forma>("Diamante");
+  const [estado, setEstado] = useState(9);
+  const [precio, setPrecio] = useState("");
+  const [desc, setDesc] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // React 19 resetea el <form> cuando termina la accion. Los campos de texto
+  // los repinta desde el estado, pero un <select> controlado queda en la
+  // primera opcion: el estado dice "Mendoza" y la pantalla "Elegí provincia".
+  // Hay que reescribirles el valor despues del reset.
+  useEffect(() => {
+    const f = formRef.current;
+    if (!f) return;
+    for (const [nombre, valor] of [
+      ["marca_id", marca],
+      ["anio", anio],
+      ["provincia", provincia],
+    ] as const) {
+      const campo = f.elements.namedItem(nombre);
+      if (campo instanceof HTMLSelectElement) campo.value = valor;
+    }
+  }, [state, marca, anio, provincia]);
 
   const agregar = async (files: FileList | null) => {
     if (!files) return;
@@ -279,7 +304,7 @@ export function PublishScreen({
     );
 
   return (
-    <form action={formAction} className="mx-auto max-w-[640px] px-4 pb-28 pt-6 md:px-6 md:pb-10" noValidate>
+    <form ref={formRef} action={formAction} className="mx-auto max-w-[640px] px-4 pb-28 pt-6 md:px-6 md:pb-10" noValidate>
       <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 24 }}>Publicar paleta</h1>
       <p className="mt-1 text-[14px]" style={{ color: "#5B6470" }}>
         Completá los datos y en minutos tu paleta queda publicada. Los campos con{" "}
@@ -423,7 +448,8 @@ export function PublishScreen({
               id="marca_id"
               name="marca_id"
               required
-              defaultValue={v.marca_id ?? ""}
+              value={marca}
+              onChange={(ev) => setMarca(ev.target.value)}
               aria-invalid={!!e.marca_id}
               className={campoClass}
               style={inputStyle(e.marca_id)}
@@ -444,7 +470,8 @@ export function PublishScreen({
               id="modelo"
               name="modelo"
               required
-              defaultValue={v.modelo}
+              value={modelo}
+              onChange={(ev) => setModelo(ev.target.value)}
               maxLength={120}
               placeholder="Ej: Vertex 04"
               aria-invalid={!!e.modelo}
@@ -523,7 +550,8 @@ export function PublishScreen({
               id="anio"
               name="anio"
               required
-              defaultValue={v.anio ?? ""}
+              value={anio}
+              onChange={(ev) => setAnio(ev.target.value)}
               aria-invalid={!!e.anio}
               className={campoClass}
               style={inputStyle(e.anio)}
@@ -561,7 +589,8 @@ export function PublishScreen({
               id="provincia"
               name="provincia"
               required
-              defaultValue={v.provincia ?? ""}
+              value={provincia}
+              onChange={(ev) => setProvincia(ev.target.value)}
               aria-invalid={!!e.provincia}
               className={campoClass}
               style={inputStyle(e.provincia)}
@@ -580,7 +609,8 @@ export function PublishScreen({
               id="ciudad"
               name="ciudad"
               required
-              defaultValue={v.ciudad}
+              value={ciudad}
+              onChange={(ev) => setCiudad(ev.target.value)}
               placeholder="Ej: Rosario"
               aria-invalid={!!e.ciudad}
               className={campoClass}
