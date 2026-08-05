@@ -5,6 +5,7 @@ import {
   validarAuth,
   limpiarBusqueda,
   armarWhatsapp,
+  destinoSeguro,
   PREFIJO_WHATSAPP,
   type DatosPaleta,
 } from "./validar";
@@ -20,7 +21,7 @@ import {
 } from "./paletas";
 
 const ok = (): DatosPaleta => ({
-  marca_id: 3,
+  marca: "Babolat",
   modelo: "Hack 04",
   forma: "Diamante",
   anio: 2026,
@@ -40,10 +41,10 @@ test("una paleta completa no tiene errores", () => {
 
 test("los campos vacios se marcan todos juntos, no de a uno", () => {
   const e = validarPaleta(
-    { ...ok(), modelo: "", ciudad: "", descripcion: "", marca_id: 0 },
+    { ...ok(), modelo: "", ciudad: "", descripcion: "", marca: "" },
     2026,
   );
-  expect(Object.keys(e).sort()).toEqual(["ciudad", "descripcion", "marca_id", "modelo"]);
+  expect(Object.keys(e).sort()).toEqual(["ciudad", "descripcion", "marca", "modelo"]);
 });
 
 test("el anio acepta hasta el que viene y rechaza el siguiente", () => {
@@ -219,4 +220,14 @@ test("los planes son 15 dias a $2000 y 30 a $3000", () => {
     { dias: 15, precio: 2000 },
     { dias: 30, precio: 3000 },
   ]);
+});
+
+// --- redirect seguro -------------------------------------------------------
+
+test("destinoSeguro solo deja pasar una ruta interna", () => {
+  expect(destinoSeguro("/paletas/abc")).toBe("/paletas/abc");
+  expect(destinoSeguro("//evil.com")).toBe("/");
+  expect(destinoSeguro("https://evil.com")).toBe("/");
+  expect(destinoSeguro(null)).toBe("/");
+  expect(destinoSeguro("")).toBe("/");
 });

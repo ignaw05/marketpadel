@@ -34,6 +34,7 @@ export type FiltrosFeed = {
   q?: string;
   marca?: string;
   forma?: string;
+  provincia?: string;
   ciudad?: string;
   precioMax?: string;
   estado?: string;

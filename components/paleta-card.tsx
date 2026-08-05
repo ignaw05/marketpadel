@@ -71,7 +71,7 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
           {formatPrecio(paleta.precio)}
         </p>
         <p className="mt-1.5 flex items-center gap-1 text-[13px]" style={{ color: "#5B6470" }}>
-          <MapPin size={13} aria-hidden /> {paleta.ciudad}
+          <MapPin size={13} aria-hidden /> {paleta.ciudad}, {paleta.provincia}
         </p>
       </div>
     </Link>

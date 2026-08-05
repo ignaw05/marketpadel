@@ -3,16 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { validarPaleta, type CampoPaleta, type Errores } from "@/lib/validar";
-
-export type PublicarState = {
-  error?: string;
-  campos?: Errores<CampoPaleta>;
-};
+import { validarPaleta } from "@/lib/validar";
+import type { PublicarState } from "@/app/(main)/publicar/actions";
 
 const texto = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 
-export async function publicar(
+export async function actualizar(
+  id: string,
   _prev: PublicarState,
   fd: FormData,
 ): Promise<PublicarState> {
@@ -22,8 +19,8 @@ export async function publicar(
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  // Las fotos ya las subio el navegador al storage: aca llegan solo las URLs,
-  // y solo valen las de la carpeta de este usuario en nuestro bucket.
+  // Las fotos nuevas ya las subio el navegador al storage: aca llegan las URLs,
+  // sean nuevas o de las que ya tenia la publicacion.
   const prefijo = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/paletas/${user.id}/`;
   const fotos = fd
     .getAll("fotos")
@@ -43,13 +40,9 @@ export async function publicar(
     fotos,
   };
 
-  // Los valores no vuelven: el form los tiene en estado de React, que el
-  // reset del <form> no toca.
   const campos = validarPaleta(datos);
   if (Object.keys(campos).length) return { campos };
 
-  // Si la marca no esta en el catalogo, se crea: asi la proxima persona que
-  // publique o filtre por ella ya la encuentra en las sugerencias.
   const { data: marcaId, error: errorMarca } = await supabase.rpc("marca_id_para", {
     p_nombre: datos.marca,
   });
@@ -57,25 +50,29 @@ export async function publicar(
     return { error: "No pudimos guardar esa marca. Probá de nuevo." };
   }
 
-  const { error } = await supabase.from("paletas").insert({
-    vendedor_id: user.id,
-    marca_id: marcaId,
-    modelo: datos.modelo,
-    forma: datos.forma,
-    anio: datos.anio,
-    estado: datos.estado,
-    precio: datos.precio,
-    provincia: datos.provincia,
-    ciudad: datos.ciudad,
-    descripcion: datos.descripcion,
-    fotos: datos.fotos,
-  });
+  const { error } = await supabase
+    .from("paletas")
+    .update({
+      marca_id: marcaId,
+      modelo: datos.modelo,
+      forma: datos.forma,
+      anio: datos.anio,
+      estado: datos.estado,
+      precio: datos.precio,
+      provincia: datos.provincia,
+      ciudad: datos.ciudad,
+      descripcion: datos.descripcion,
+      fotos: datos.fotos,
+    })
+    .eq("id", id)
+    .eq("vendedor_id", user.id);
 
   if (error) {
-    return { error: "No pudimos publicar la paleta. Probá de nuevo." };
+    return { error: "No pudimos guardar los cambios. Probá de nuevo." };
   }
 
   revalidatePath("/");
   revalidatePath("/mis-publicaciones");
-  redirect("/mis-publicaciones?publicada=1");
+  revalidatePath(`/paletas/${id}`);
+  redirect("/mis-publicaciones?editada=1");
 }

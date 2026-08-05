@@ -33,6 +33,7 @@ export async function listarPaletas(f: FiltrosFeed): Promise<Paleta[]> {
     }
     if (f.marca) query = query.eq("marca", f.marca);
     if (f.forma) query = query.eq("forma", f.forma);
+    if (f.provincia) query = query.eq("provincia", f.provincia);
     if (f.ciudad) query = query.eq("ciudad", f.ciudad);
 
     if (tope !== null) query = query.lte("precio", tope);
@@ -81,6 +82,37 @@ export async function obtenerPaleta(
       miembroDesde: new Date(perfiles?.created_at ?? Date.now()).getFullYear(),
     },
   };
+}
+
+export async function obtenerMiPaleta(id: string): Promise<Paleta | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const data = await conReintento(async () => {
+    const r = await supabase
+      .from("paletas")
+      .select(
+        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, marcas (nombre)",
+      )
+      .eq("id", id)
+      .eq("vendedor_id", user.id)
+      .maybeSingle();
+
+    // 22P02: el id de la URL no es un uuid valido. Es un 404, no un error.
+    if (r.error?.code === "22P02") return { data: null, error: null };
+    return r;
+  });
+
+  if (!data) return null;
+
+  const { marcas, ...paleta } = data as unknown as Paleta & {
+    marcas: { nombre: string } | null;
+  };
+
+  return { ...paleta, marca: marcas?.nombre ?? "" };
 }
 
 export async function listarMisPaletas(): Promise<Paleta[]> {

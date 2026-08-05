@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { MoreVertical, PauseCircle, PlayCircle, Trash2, CheckCircle2 } from "lucide-react";
+import { MoreVertical, Pencil, PauseCircle, PlayCircle, Trash2, CheckCircle2 } from "lucide-react";
 import { cambiarEstado, eliminar } from "@/app/(main)/mis-publicaciones/actions";
 import type { Paleta } from "@/lib/paletas";
 
@@ -70,6 +71,15 @@ export function AccionesPaleta({ paleta }: { paleta: Paleta }) {
             className="absolute right-0 top-full z-20 mt-1 w-52 rounded-[14px] p-1.5"
             style={{ background: "#FFFFFF", border: "1px solid #E6E4DF", boxShadow: "0 12px 28px rgba(0,0,0,0.10)" }}
           >
+            <Link
+              href={`/editar/${paleta.id}`}
+              onClick={() => setMenu(false)}
+              className={itemClass}
+              style={{ color: "#14171A", outlineColor: "#0F5132" }}
+            >
+              <Pencil size={15} aria-hidden /> Editar
+            </Link>
+
             {!vendida && (
               <form action={cambiarEstado} onSubmit={() => setMenu(false)}>
                 <input type="hidden" name="id" value={paleta.id} />

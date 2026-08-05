@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   validarAuth,
   armarWhatsapp,
+  destinoSeguro,
   type CampoAuth,
   type Errores,
 } from "@/lib/validar";
@@ -36,6 +37,7 @@ export async function autenticar(
   formData: FormData,
 ): Promise<AuthState> {
   const modo = texto(formData, "modo") === "registro" ? "registro" : "login";
+  const next = destinoSeguro(texto(formData, "next"));
   const email = texto(formData, "email");
   const password = String(formData.get("password") ?? "");
   const nombre = texto(formData, "nombre");
@@ -101,7 +103,7 @@ export async function autenticar(
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect(next);
 }
 
 export async function reenviarConfirmacion(
@@ -135,5 +137,5 @@ export async function cerrarSesion() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/auth");
+  redirect("/");
 }

@@ -280,7 +280,13 @@ function EsperandoConfirmacion({
   );
 }
 
-export function AuthScreen({ errorInicial }: { errorInicial?: string }) {
+export function AuthScreen({
+  errorInicial,
+  next,
+}: {
+  errorInicial?: string;
+  next: string;
+}) {
   const [tab, setTab] = useState<"login" | "registro">("login");
   const [state, formAction] = useActionState<AuthState, FormData>(autenticar, {});
   const [descartado, setDescartado] = useState(false);
@@ -329,6 +335,7 @@ export function AuthScreen({ errorInicial }: { errorInicial?: string }) {
 
       <form action={formAction} className="space-y-4" noValidate>
         <input type="hidden" name="modo" value={tab} />
+        <input type="hidden" name="next" value={next} />
 
         {error && <Aviso tipo="error">{error}</Aviso>}
 

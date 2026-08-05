@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Search, Plus, LayoutGrid, LogOut } from "lucide-react";
+import { Search, Plus, LayoutGrid, LogOut, LogIn } from "lucide-react";
 import { Logo } from "./logo";
 import { cerrarSesion } from "@/app/auth/actions";
 
@@ -51,11 +51,17 @@ function Buscador({ id, className }: { id: string; className?: string }) {
   );
 }
 
-export function Header({ nombre, apellido }: { nombre: string; apellido: string }) {
+export function Header({
+  usuario,
+}: {
+  usuario: { nombre: string; apellido: string } | null;
+}) {
   const pathname = usePathname();
   const enMisPaletas = pathname === "/mis-publicaciones";
-  const iniciales = `${nombre[0] ?? ""}${apellido[0] ?? ""}`.toUpperCase() || "?";
-  const nombreCompleto = `${nombre} ${apellido}`.trim() || "Mi cuenta";
+  const iniciales = usuario
+    ? (`${usuario.nombre[0] ?? ""}${usuario.apellido[0] ?? ""}`.toUpperCase() || "?")
+    : "?";
+  const nombreCompleto = usuario ? `${usuario.nombre} ${usuario.apellido}`.trim() || "Mi cuenta" : "";
 
   return (
     <header
@@ -75,18 +81,30 @@ export function Header({ nombre, apellido }: { nombre: string; apellido: string 
         <Buscador id="buscar-desktop" className="hidden min-w-0 flex-1 md:block" />
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-          <Link
-            href="/mis-publicaciones"
-            aria-current={enMisPaletas ? "page" : undefined}
-            className="hidden min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex"
-            style={{
-              color: enMisPaletas ? "#0F5132" : "#5B6470",
-              fontWeight: 600,
-              outlineColor: "#0F5132",
-            }}
-          >
-            <LayoutGrid size={16} aria-hidden /> Mis paletas
-          </Link>
+          {usuario && (
+            <Link
+              href="/mis-publicaciones"
+              aria-current={enMisPaletas ? "page" : undefined}
+              className="hidden min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex"
+              style={{
+                color: enMisPaletas ? "#0F5132" : "#5B6470",
+                fontWeight: 600,
+                outlineColor: "#0F5132",
+              }}
+            >
+              <LayoutGrid size={16} aria-hidden /> Mis paletas
+            </Link>
+          )}
+
+          {!usuario && (
+            <Link
+              href="/auth"
+              className="flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+              style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#0F5132" }}
+            >
+              <LogIn size={16} aria-hidden /> Ingresar
+            </Link>
+          )}
 
           <Link
             href="/publicar"
@@ -96,25 +114,29 @@ export function Header({ nombre, apellido }: { nombre: string; apellido: string 
             <Plus size={16} aria-hidden /> <span className="hidden sm:inline">Publicar</span>
           </Link>
 
-          <Link
-            href="/mis-publicaciones"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[13px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ background: "#0F5132", fontWeight: 700, outlineColor: "#0F5132" }}
-          >
-            <span aria-hidden>{iniciales}</span>
-            <span className="sr-only">{nombreCompleto}</span>
-          </Link>
+          {usuario && (
+            <>
+              <Link
+                href="/mis-publicaciones"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[13px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{ background: "#0F5132", fontWeight: 700, outlineColor: "#0F5132" }}
+              >
+                <span aria-hidden>{iniciales}</span>
+                <span className="sr-only">{nombreCompleto}</span>
+              </Link>
 
-          <form action={cerrarSesion}>
-            <button
-              type="submit"
-              className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ color: "#5B6470", outlineColor: "#0F5132" }}
-            >
-              <LogOut size={18} aria-hidden />
-              <span className="sr-only">Cerrar sesión</span>
-            </button>
-          </form>
+              <form action={cerrarSesion}>
+                <button
+                  type="submit"
+                  className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
+                  style={{ color: "#5B6470", outlineColor: "#0F5132" }}
+                >
+                  <LogOut size={18} aria-hidden />
+                  <span className="sr-only">Cerrar sesión</span>
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
 

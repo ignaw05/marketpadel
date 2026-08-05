@@ -6,7 +6,7 @@ export const MAX_FOTOS = 4;
 export const MAX_BYTES = 5 * 1024 * 1024;
 
 export type CampoPaleta =
-  | "marca_id"
+  | "marca"
   | "modelo"
   | "forma"
   | "anio"
@@ -18,7 +18,7 @@ export type CampoPaleta =
   | "fotos";
 
 export type DatosPaleta = {
-  marca_id: number;
+  marca: string;
   modelo: string;
   forma: string;
   anio: number;
@@ -54,7 +54,8 @@ export function validarPaleta(
 ): Errores<CampoPaleta> {
   const e: Errores<CampoPaleta> = {};
 
-  if (!d.marca_id) e.marca_id = "Elegí una marca.";
+  if (!d.marca) e.marca = "Escribí la marca.";
+  else if (d.marca.length > 60) e.marca = "Máximo 60 caracteres.";
   if (!d.modelo) e.modelo = "Escribí el modelo.";
   else if (d.modelo.length > 120) e.modelo = "Máximo 120 caracteres.";
 
@@ -129,3 +130,8 @@ export function validarAuth(
  * texto que escribio el usuario, rompen la query o cambian lo que filtra.
  */
 export const limpiarBusqueda = (q: string) => q.replace(/[,().*]/g, " ").trim();
+
+/** Path interno o "/". Corta el open-redirect de ?next=//evil.com */
+export function destinoSeguro(next: string | null | undefined): string {
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+}

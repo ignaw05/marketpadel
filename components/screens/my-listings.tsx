@@ -127,10 +127,12 @@ const AVISO_PAGO = {
 export function MyListings({
   paletas,
   publicada,
+  editada,
   pago,
 }: {
   paletas: Paleta[];
   publicada?: boolean;
+  editada?: boolean;
   pago?: string;
 }) {
   const aviso = AVISO_PAGO[pago as keyof typeof AVISO_PAGO];
@@ -149,6 +151,16 @@ export function MyListings({
           style={{ background: "rgba(15,81,50,0.08)", color: "#0F5132" }}
         >
           <CheckCircle2 size={16} aria-hidden /> ¡Paleta publicada! Ya está visible para todos.
+        </p>
+      )}
+
+      {editada && (
+        <p
+          role="status"
+          className="mt-4 flex items-center gap-2 rounded-[14px] p-3 text-[14px]"
+          style={{ background: "rgba(15,81,50,0.08)", color: "#0F5132" }}
+        >
+          <CheckCircle2 size={16} aria-hidden /> Cambios guardados.
         </p>
       )}
 

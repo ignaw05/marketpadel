@@ -22,9 +22,11 @@ import {
   estadoLabel,
   medidas,
 } from "@/lib/paletas";
+import type { Paleta } from "@/lib/paletas";
 import { validarFotos, MAX_BYTES } from "@/lib/validar";
 import { createClient } from "@/lib/supabase/client";
 import { publicar, type PublicarState } from "@/app/(main)/publicar/actions";
+import { actualizar } from "@/app/(main)/editar/[id]/actions";
 
 const inputStyle = (error?: string): React.CSSProperties => ({
   background: "#FAFAF8",
@@ -137,7 +139,126 @@ function MoverFoto({
   );
 }
 
-function Submit() {
+/**
+ * Combobox nativo del navegador (<input list> + <datalist>) no anda en Safari
+ * de iOS y en Android sale con el estilo del sistema: por eso el listbox de
+ * sugerencias se dibuja a mano, con los mismos colores que el resto del form.
+ */
+function CampoMarca({
+  id,
+  marcas,
+  valor,
+  onChange,
+  error,
+}: {
+  id: string;
+  marcas: { id: number; nombre: string }[];
+  valor: string;
+  onChange: (v: string) => void;
+  error?: string;
+}) {
+  const [abierta, setAbierta] = useState(false);
+  const [activo, setActivo] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtradas = marcas.filter((m) =>
+    m.nombre.toLowerCase().includes(valor.trim().toLowerCase()),
+  );
+
+  const elegir = (nombre: string) => {
+    onChange(nombre);
+    setAbierta(false);
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div
+      className="relative"
+      // El click en una sugerencia mueve el foco a ese boton antes de disparar
+      // el click: sigue "adentro" del contenedor, asi que no se cierra antes de
+      // tiempo. Tabular hacia afuera si cierra.
+      onBlur={(ev) => {
+        if (!ev.currentTarget.contains(ev.relatedTarget as Node | null)) setAbierta(false);
+      }}
+    >
+      <input
+        ref={inputRef}
+        id={id}
+        name="marca"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={abierta && filtradas.length > 0}
+        aria-controls={`${id}-listbox`}
+        aria-activedescendant={activo >= 0 ? `${id}-opcion-${activo}` : undefined}
+        autoComplete="off"
+        required
+        value={valor}
+        onChange={(ev) => {
+          onChange(ev.target.value);
+          setAbierta(true);
+          setActivo(-1);
+        }}
+        onFocus={() => setAbierta(true)}
+        onKeyDown={(ev) => {
+          if (ev.key === "ArrowDown") {
+            ev.preventDefault();
+            setAbierta(true);
+            setActivo((i) => Math.min(i + 1, filtradas.length - 1));
+          } else if (ev.key === "ArrowUp") {
+            ev.preventDefault();
+            setActivo((i) => Math.max(i - 1, 0));
+          } else if (ev.key === "Enter" && abierta && activo >= 0 && filtradas[activo]) {
+            ev.preventDefault();
+            elegir(filtradas[activo].nombre);
+          } else if (ev.key === "Escape") {
+            setAbierta(false);
+          }
+        }}
+        maxLength={60}
+        placeholder="Ej: Bullpadel"
+        aria-invalid={!!error}
+        className={campoClass}
+        style={inputStyle(error)}
+      />
+
+      {abierta && filtradas.length > 0 && (
+        <ul
+          id={`${id}-listbox`}
+          role="listbox"
+          aria-label="Marcas sugeridas"
+          className="absolute inset-x-0 top-full z-20 mt-1.5 max-h-56 overflow-y-auto rounded-[14px] p-1.5"
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid #E6E4DF",
+            boxShadow: "0 12px 28px rgba(0,0,0,0.10)",
+          }}
+        >
+          {filtradas.map((m, i) => (
+            <li key={m.id}>
+              <button
+                type="button"
+                role="option"
+                id={`${id}-opcion-${i}`}
+                aria-selected={i === activo}
+                onClick={() => elegir(m.nombre)}
+                className="block min-h-[44px] w-full rounded-[10px] px-3 py-2.5 text-left text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{
+                  color: "#14171A",
+                  background: i === activo ? "#F2F1ED" : "transparent",
+                  outlineColor: "#0F5132",
+                }}
+              >
+                {m.nombre}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Submit({ editando }: { editando: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -146,7 +267,13 @@ function Submit() {
       className="min-h-[44px] w-full rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
     >
-      {pending ? "Publicando…" : "Publicar paleta"}
+      {editando
+        ? pending
+          ? "Guardando…"
+          : "Guardar cambios"
+        : pending
+          ? "Publicando…"
+          : "Publicar paleta"}
     </button>
   );
 }
@@ -154,11 +281,17 @@ function Submit() {
 export function PublishScreen({
   marcas,
   userId,
+  paleta,
 }: {
   marcas: { id: number; nombre: string }[];
   userId: string;
+  /** Presente en modo edicion: la paleta a modificar. */
+  paleta?: Paleta;
 }) {
-  const [fotos, setFotos] = useState<{ file: File; url: string }[]>([]);
+  const editando = !!paleta;
+  const [fotos, setFotos] = useState<{ file?: File; url: string }[]>(
+    paleta ? paleta.fotos.map((url) => ({ url })) : [],
+  );
 
   // Las fotos se suben desde el navegador directo al storage y al server action
   // solo le llegan las URLs: un form con 4 fotos de celular pasa los limites de
@@ -167,8 +300,12 @@ export function PublishScreen({
     prev: PublicarState,
     fd: FormData,
   ): Promise<PublicarState> => {
+    // Las que ya estaban publicadas no tienen `file`: ya se validaron cuando
+    // se subieron la primera vez, no hace falta chequearlas de nuevo.
     const mensaje = validarFotos(
-      fotos.map(({ file }) => ({ tipo: file.type, bytes: file.size })),
+      fotos.map(({ file }) =>
+        file ? { tipo: file.type, bytes: file.size } : { tipo: "image/webp", bytes: 0 },
+      ),
     );
     if (mensaje) return { ...prev, error: undefined, campos: { fotos: mensaje } };
 
@@ -176,7 +313,11 @@ export function PublishScreen({
     const urls: string[] = [];
     // ponytail: si falla a mitad quedan fotos huerfanas en el bucket; limpiarlas
     // con un job de storage si alguna vez molesta.
-    for (const { file } of fotos) {
+    for (const { file, url } of fotos) {
+      if (!file) {
+        urls.push(url);
+        continue;
+      }
       const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().slice(0, 5);
       // La policy del bucket exige que la carpeta sea el uid del que sube.
       const ruta = `${userId}/${crypto.randomUUID()}.${ext}`;
@@ -188,7 +329,7 @@ export function PublishScreen({
     }
 
     urls.forEach((u) => fd.append("fotos", u));
-    return publicar(prev, fd);
+    return paleta ? actualizar(paleta.id, prev, fd) : publicar(prev, fd);
   };
 
   const [state, formAction] = useActionState<PublicarState, FormData>(subirYPublicar, {});
@@ -200,15 +341,15 @@ export function PublishScreen({
   // Todos los campos viven en estado de React. React 19 resetea el <form>
   // cuando termina la accion, asi que lo que quede en el DOM se pierde: con un
   // error de validacion el usuario tendria que reescribir todo.
-  const [marca, setMarca] = useState("");
-  const [modelo, setModelo] = useState("");
-  const [anio, setAnio] = useState("");
-  const [provincia, setProvincia] = useState("");
-  const [ciudad, setCiudad] = useState("");
-  const [forma, setForma] = useState<Forma>("Diamante");
-  const [estado, setEstado] = useState(9);
-  const [precio, setPrecio] = useState("");
-  const [desc, setDesc] = useState("");
+  const [marca, setMarca] = useState(paleta?.marca ?? "");
+  const [modelo, setModelo] = useState(paleta?.modelo ?? "");
+  const [anio, setAnio] = useState(paleta ? String(paleta.anio) : "");
+  const [provincia, setProvincia] = useState(paleta?.provincia ?? "");
+  const [ciudad, setCiudad] = useState(paleta?.ciudad ?? "");
+  const [forma, setForma] = useState<Forma>(paleta?.forma ?? "Diamante");
+  const [estado, setEstado] = useState(paleta?.estado ?? 9);
+  const [precio, setPrecio] = useState(paleta ? String(paleta.precio) : "");
+  const [desc, setDesc] = useState(paleta?.descripcion ?? "");
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -220,14 +361,13 @@ export function PublishScreen({
     const f = formRef.current;
     if (!f) return;
     for (const [nombre, valor] of [
-      ["marca_id", marca],
       ["anio", anio],
       ["provincia", provincia],
     ] as const) {
       const campo = f.elements.namedItem(nombre);
       if (campo instanceof HTMLSelectElement) campo.value = valor;
     }
-  }, [state, marca, anio, provincia]);
+  }, [state, anio, provincia]);
 
   const agregar = async (files: FileList | null) => {
     if (!files) return;
@@ -281,7 +421,9 @@ export function PublishScreen({
   };
 
   const sacar = (i: number) => {
-    URL.revokeObjectURL(fotos[i].url);
+    // Las que ya estaban publicadas apuntan a la URL del storage, no a un
+    // object URL local: no hay nada que revocar.
+    if (fotos[i].file) URL.revokeObjectURL(fotos[i].url);
     setFotos(fotos.filter((_, x) => x !== i));
   };
 
@@ -305,10 +447,14 @@ export function PublishScreen({
 
   return (
     <form ref={formRef} action={formAction} className="mx-auto max-w-[640px] px-4 pb-28 pt-6 md:px-6 md:pb-10" noValidate>
-      <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 24 }}>Publicar paleta</h1>
+      <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 24 }}>
+        {editando ? "Editar paleta" : "Publicar paleta"}
+      </h1>
       <p className="mt-1 text-[14px]" style={{ color: "#5B6470" }}>
-        Completá los datos y en minutos tu paleta queda publicada. Los campos con{" "}
-        <span style={{ color: "#D4183D" }}>*</span> son obligatorios.
+        {editando
+          ? "Actualizá los datos de tu publicación. "
+          : "Completá los datos y en minutos tu paleta queda publicada. "}
+        Los campos con <span style={{ color: "#D4183D" }}>*</span> son obligatorios.
       </p>
 
       <div
@@ -443,26 +589,8 @@ export function PublishScreen({
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Campo id="marca_id" label="Marca" error={e.marca_id}>
-            <select
-              id="marca_id"
-              name="marca_id"
-              required
-              value={marca}
-              onChange={(ev) => setMarca(ev.target.value)}
-              aria-invalid={!!e.marca_id}
-              className={campoClass}
-              style={inputStyle(e.marca_id)}
-            >
-              <option value="" disabled>
-                Elegí una marca
-              </option>
-              {marcas.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nombre}
-                </option>
-              ))}
-            </select>
+          <Campo id="marca" label="Marca" error={e.marca}>
+            <CampoMarca id="marca" marcas={marcas} valor={marca} onChange={setMarca} error={e.marca} />
           </Campo>
 
           <Campo id="modelo" label="Modelo" error={e.modelo}>
@@ -645,7 +773,7 @@ export function PublishScreen({
         </Campo>
 
         <div className="hidden md:block">
-          <Submit />
+          <Submit editando={editando} />
         </div>
       </div>
 
@@ -654,7 +782,7 @@ export function PublishScreen({
         className="fixed inset-x-0 bottom-0 z-20 p-4 md:hidden"
         style={{ background: "#FFFFFF", boxShadow: "0 -4px 16px rgba(0,0,0,0.06)" }}
       >
-        <Submit />
+        <Submit editando={editando} />
       </div>
     </form>
   );

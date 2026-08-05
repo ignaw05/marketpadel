@@ -80,9 +80,9 @@ export function HomeScreen({
   // Solo las claves que la query mira. Con Object.values(), cualquier param de
   // paso (?error=..., ?utm_source=...) haria creer que hay filtros puestos y
   // mostraria "no encontramos" en vez del vacio real.
-  const buscando = (["q", "marca", "forma", "ciudad", "precioMax", "estado"] as const).some(
-    (k) => filtros[k],
-  );
+  const buscando = (
+    ["q", "marca", "forma", "provincia", "ciudad", "precioMax", "estado"] as const
+  ).some((k) => filtros[k]);
 
   return (
     <div className="mx-auto flex max-w-[1280px] flex-col px-4 py-5 md:flex-row md:gap-8 md:px-6">

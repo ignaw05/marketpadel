@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import {
   FORMAS,
+  PROVINCIAS,
   ESTADOS,
   PRECIO_TOPE,
   PRECIO_PASO,
@@ -13,7 +14,7 @@ import {
   topePrecio,
 } from "@/lib/paletas";
 
-const CLAVES = ["marca", "forma", "precioMax", "ciudad", "estado"];
+const CLAVES = ["marca", "forma", "precioMax", "provincia", "ciudad", "estado"];
 
 /** Arma el href conservando el resto de los filtros y la busqueda. */
 function useHref() {
@@ -164,7 +165,8 @@ export function Filtros({ marcas, ciudades }: { marcas: string[]; ciudades: stri
     <div className="mb-5 flex flex-wrap items-center gap-2 pb-1 md:mb-0 md:flex-col md:items-stretch md:gap-3">
       <Dropdown etiqueta="Marca" clave="marca" opciones={marcas} />
       <Dropdown etiqueta="Forma" clave="forma" opciones={[...FORMAS]} />
-      <Dropdown etiqueta="Ubicación" clave="ciudad" opciones={ciudades} />
+      <Dropdown etiqueta="Provincia" clave="provincia" opciones={[...PROVINCIAS]} />
+      <Dropdown etiqueta="Ciudad" clave="ciudad" opciones={ciudades} />
       <Dropdown etiqueta="Estado" clave="estado" opciones={ESTADOS.map((e) => e.label)} />
       {/* key: al limpiar filtros o volver atras, el pulgar se reposiciona solo */}
       <PrecioSlider key={params.get("precioMax") ?? ""} />
