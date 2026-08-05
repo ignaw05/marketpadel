@@ -107,3 +107,12 @@ const PESOS = new Intl.NumberFormat("es-AR", {
 export const formatPrecio = (n: number): string => PESOS.format(n);
 
 export const foto = (p: Pick<Paleta, "fotos">): string => p.fotos[0] ?? "";
+
+/** Lado maximo que guardamos: la card mas grande del feed no pasa de 640px. */
+export const MAX_LADO = 1600;
+
+/** Achica respetando el lado largo. Nunca agranda: una foto chica queda igual. */
+export const medidas = (ancho: number, alto: number, max = MAX_LADO) => {
+  const escala = Math.min(1, max / Math.max(ancho, alto));
+  return { ancho: Math.round(ancho * escala), alto: Math.round(alto * escala) };
+};
