@@ -77,7 +77,12 @@ export function HomeScreen({
   ciudades: string[];
   filtros: FiltrosFeed;
 }) {
-  const buscando = Object.values(filtros).some(Boolean);
+  // Solo las claves que la query mira. Con Object.values(), cualquier param de
+  // paso (?error=..., ?utm_source=...) haria creer que hay filtros puestos y
+  // mostraria "no encontramos" en vez del vacio real.
+  const buscando = (["q", "marca", "forma", "ciudad", "precio", "estado"] as const).some(
+    (k) => filtros[k],
+  );
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 py-5 md:px-6">
