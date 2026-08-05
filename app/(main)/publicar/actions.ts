@@ -8,7 +8,6 @@ import { validarPaleta, type CampoPaleta, type Errores } from "@/lib/validar";
 export type PublicarState = {
   error?: string;
   campos?: Errores<CampoPaleta>;
-  valores?: Record<string, string>;
 };
 
 const texto = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -44,20 +43,10 @@ export async function publicar(
     fotos,
   };
 
-  const valores = {
-    marca_id: String(datos.marca_id || ""),
-    modelo: datos.modelo,
-    forma: datos.forma,
-    anio: String(datos.anio || ""),
-    estado: String(datos.estado || ""),
-    precio: String(datos.precio || ""),
-    provincia: datos.provincia,
-    ciudad: datos.ciudad,
-    descripcion: datos.descripcion,
-  };
-
+  // Los valores no vuelven: el form los tiene en estado de React, que el
+  // reset del <form> no toca.
   const campos = validarPaleta(datos);
-  if (Object.keys(campos).length) return { campos, valores };
+  if (Object.keys(campos).length) return { campos };
 
   const { error } = await supabase.from("paletas").insert({
     vendedor_id: user.id,
@@ -74,7 +63,7 @@ export async function publicar(
   });
 
   if (error) {
-    return { error: "No pudimos publicar la paleta. Probá de nuevo.", valores };
+    return { error: "No pudimos publicar la paleta. Probá de nuevo." };
   }
 
   revalidatePath("/");
