@@ -167,20 +167,39 @@ export function PublishScreen({
   const e = state.campos ?? {};
 
   const [drag, setDrag] = useState(false);
+  const [aviso, setAviso] = useState<string>();
   const [forma, setForma] = useState<Forma>((v.forma as Forma) || "Diamante");
   const [estado, setEstado] = useState(Number(v.estado) || 9);
   const [precio, setPrecio] = useState(v.precio ?? "");
   const [desc, setDesc] = useState(v.descripcion ?? "");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const agregar = (files: FileList | null) => {
+  const agregar = async (files: FileList | null) => {
     if (!files) return;
-    const nuevas = Array.from(files)
-      .slice(0, 4 - fotos.length)
-      .map((file) => ({ file, url: URL.createObjectURL(file) }));
-    setFotos([...fotos, ...nuevas]);
+    const candidatos = Array.from(files).slice(0, 4 - fotos.length);
     // Sin esto, volver a elegir el mismo archivo no dispara el change.
     if (fileRef.current) fileRef.current.value = "";
+
+    const nuevas: typeof fotos = [];
+    const rechazadas: string[] = [];
+    for (const file of candidatos) {
+      // Si este navegador no la puede decodificar, el comprador tampoco la va a
+      // ver: pasa con los .heic del iPhone en todo lo que no sea Safari.
+      const bitmap = await createImageBitmap(file).catch(() => null);
+      if (!bitmap) {
+        rechazadas.push(file.name);
+        continue;
+      }
+      bitmap.close();
+      nuevas.push({ file, url: URL.createObjectURL(file) });
+    }
+
+    setFotos([...fotos, ...nuevas]);
+    setAviso(
+      rechazadas.length
+        ? `No pudimos leer ${rechazadas.join(", ")}. Si son fotos del iPhone (.heic), abrilas y exportalas como JPG antes de subirlas.`
+        : undefined,
+    );
   };
 
   const sacar = (i: number) => {
@@ -306,7 +325,7 @@ export function PublishScreen({
                 style={{
                   aspectRatio: "1",
                   width: "100%",
-                  border: `1.5px dashed ${drag ? "#0F5132" : e.fotos ? "#D4183D" : "#E6E4DF"}`,
+                  border: `1.5px dashed ${drag ? "#0F5132" : e.fotos || aviso ? "#D4183D" : "#E6E4DF"}`,
                   background: drag ? "rgba(15,81,50,0.04)" : "#FAFAF8",
                   color: "#5B6470",
                   outlineColor: "#0F5132",
@@ -323,14 +342,20 @@ export function PublishScreen({
           </div>
           <input
             ref={fileRef}
-            name="fotos"
             type="file"
-            accept="image/*"
+            // Lista explicita en vez de image/*: iOS convierte el HEIC a JPG solo
+            // cuando el accept no lo incluye.
+            accept="image/jpeg,image/png,image/webp"
             multiple
             hidden
             onChange={(ev) => agregar(ev.target.files)}
           />
           <Error id="fotos-error" mensaje={e.fotos} />
+          {aviso && (
+            <p role="alert" className="mt-1 text-[13px]" style={{ color: "#D4183D" }}>
+              {aviso}
+            </p>
+          )}
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
