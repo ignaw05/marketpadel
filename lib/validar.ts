@@ -125,6 +125,51 @@ export function validarAuth(
   return e;
 }
 
+export type CampoPerfil = "nombre" | "apellido" | "whatsapp";
+export type CampoPassword = "actual" | "nueva" | "repetir";
+
+/** El whatsapp del perfil se edita entero, sin partir prefijo y numero. */
+export function errorTelefono(valor: string): string | undefined {
+  const t = valor.trim();
+  if (!t) return "Escribí tu número de WhatsApp.";
+  if (!/^\+?[\d\s-]+$/.test(t)) return "El número solo lleva dígitos.";
+  const digitos = t.replace(/\D/g, "");
+  if (digitos.length < 10) return "Faltan dígitos en el número.";
+  // E.164 no admite mas de 15 digitos en total.
+  if (digitos.length > 15) return "Ese número tiene dígitos de más.";
+}
+
+export function validarPerfil(d: {
+  nombre: string;
+  apellido: string;
+  whatsapp: string;
+}): Errores<CampoPerfil> {
+  const e: Errores<CampoPerfil> = {};
+  if (!d.nombre) e.nombre = "Escribí tu nombre.";
+  else if (d.nombre.length > 60) e.nombre = "Máximo 60 caracteres.";
+  if (!d.apellido) e.apellido = "Escribí tu apellido.";
+  else if (d.apellido.length > 60) e.apellido = "Máximo 60 caracteres.";
+
+  const whatsapp = errorTelefono(d.whatsapp);
+  if (whatsapp) e.whatsapp = whatsapp;
+
+  return e;
+}
+
+export function validarPassword(d: {
+  actual: string;
+  nueva: string;
+  repetir: string;
+}): Errores<CampoPassword> {
+  const e: Errores<CampoPassword> = {};
+  if (!d.actual) e.actual = "Escribí tu contraseña actual.";
+  if (!d.nueva) e.nueva = "Escribí la contraseña nueva.";
+  else if (d.nueva.length < 8) e.nueva = "Mínimo 8 caracteres.";
+  else if (d.nueva === d.actual) e.nueva = "La nueva tiene que ser distinta.";
+  else if (d.repetir !== d.nueva) e.repetir = "Las contraseñas no coinciden.";
+  return e;
+}
+
 /**
  * PostgREST separa los filtros de .or() con comas y parentesis. Si van en el
  * texto que escribio el usuario, rompen la query o cambian lo que filtra.

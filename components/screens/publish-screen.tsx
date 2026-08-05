@@ -160,6 +160,19 @@ function CampoMarca({
   const [abierta, setAbierta] = useState(false);
   const [activo, setActivo] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  // En mobile la lista se cierra al tocar afuera, no al perder el foco: cerrar
+  // el teclado (boton "Listo") blurea el input sin que el usuario haya elegido
+  // nada, y ahi es justo cuando quiere ver las sugerencias sin el teclado arriba.
+  useEffect(() => {
+    if (!abierta) return;
+    const afuera = (ev: PointerEvent) => {
+      if (!contenedorRef.current?.contains(ev.target as Node)) setAbierta(false);
+    };
+    document.addEventListener("pointerdown", afuera);
+    return () => document.removeEventListener("pointerdown", afuera);
+  }, [abierta]);
 
   const filtradas = marcas.filter((m) =>
     m.nombre.toLowerCase().includes(valor.trim().toLowerCase()),
@@ -175,12 +188,14 @@ function CampoMarca({
 
   return (
     <div
+      ref={contenedorRef}
       className="relative"
-      // El click en una sugerencia mueve el foco a ese boton antes de disparar
-      // el click: sigue "adentro" del contenedor, asi que no se cierra antes de
-      // tiempo. Tabular hacia afuera si cierra.
+      // Solo cierra al tabular hacia otro control. relatedTarget null (teclado
+      // que se cierra, o tap en Safari iOS que no enfoca el boton) no cuenta:
+      // de eso se encarga el pointerdown de afuera.
       onBlur={(ev) => {
-        if (!ev.currentTarget.contains(ev.relatedTarget as Node | null)) setAbierta(false);
+        const destino = ev.relatedTarget as Node | null;
+        if (destino && !ev.currentTarget.contains(destino)) setAbierta(false);
       }}
     >
       <input

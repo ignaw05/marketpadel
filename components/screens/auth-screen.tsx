@@ -1,10 +1,20 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
-import { AlertCircle, MailCheck, CheckCircle2 } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { Logo } from "../logo";
 import { ImageWithFallback } from "../image-with-fallback";
+import {
+  Aviso,
+  ErrorCampo,
+  Field,
+  Obligatorio,
+  Submit,
+  campoClass,
+  campoStyle,
+  ROJO,
+  VERDE,
+} from "../campos";
 import {
   autenticar,
   reenviarConfirmacion,
@@ -14,100 +24,6 @@ import { PREFIJO_WHATSAPP } from "@/lib/validar";
 
 const COURT_IMG =
   "https://images.unsplash.com/photo-1646649853517-e2f75cde1908?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200";
-
-const VERDE = "#0F5132";
-const ROJO = "#D4183D";
-
-/** El asterisco es decorativo: el dato real lo da `required` en el input. */
-function Obligatorio() {
-  return (
-    <span aria-hidden="true" style={{ color: ROJO }}>
-      {" *"}
-    </span>
-  );
-}
-
-function Aviso({ tipo, children }: { tipo: "error" | "ok"; children: React.ReactNode }) {
-  const error = tipo === "error";
-  return (
-    <p
-      role={error ? "alert" : "status"}
-      className="flex items-start gap-2 rounded-[14px] p-3 text-[13px]"
-      style={{
-        background: error ? "rgba(212,24,61,0.08)" : "rgba(15,81,50,0.08)",
-        color: error ? "#A31232" : VERDE,
-      }}
-    >
-      {error ? (
-        <AlertCircle size={16} className="mt-px shrink-0" aria-hidden />
-      ) : (
-        <CheckCircle2 size={16} className="mt-px shrink-0" aria-hidden />
-      )}
-      {children}
-    </p>
-  );
-}
-
-const campoClass =
-  "min-h-[44px] w-full rounded-[14px] px-3.5 py-2.5 text-[15px] outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
-
-const campoStyle = (error?: string): React.CSSProperties => ({
-  background: "#FAFAF8",
-  border: `1px solid ${error ? ROJO : "#E6E4DF"}`,
-  color: "#14171A",
-  outlineColor: VERDE,
-});
-
-function ErrorCampo({ id, mensaje }: { id: string; mensaje?: string }) {
-  if (!mensaje) return null;
-  return (
-    <p id={id} className="mt-1 text-[13px]" style={{ color: ROJO }}>
-      {mensaje}
-    </p>
-  );
-}
-
-function Field({
-  name,
-  label,
-  type = "text",
-  placeholder,
-  error,
-  defaultValue,
-  autoComplete,
-}: {
-  name: string;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  error?: string;
-  defaultValue?: string;
-  autoComplete?: string;
-}) {
-  const id = `auth-${name}`;
-  return (
-    <div>
-      <label className="mb-1.5 block text-[14px]" style={{ color: "#14171A" }} htmlFor={id}>
-        {label}
-        <Obligatorio />
-      </label>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        required
-        placeholder={placeholder}
-        defaultValue={defaultValue}
-        autoComplete={autoComplete}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className={campoClass}
-        style={campoStyle(error)}
-      />
-      <ErrorCampo id={`${id}-error`} mensaje={error} />
-    </div>
-  );
-}
 
 /** Prefijo editable al lado del número. Arranca en +54 9. */
 function CampoWhatsapp({
@@ -163,20 +79,6 @@ function CampoWhatsapp({
       </div>
       <ErrorCampo id="auth-whatsapp-error" mensaje={error} />
     </fieldset>
-  );
-}
-
-function Submit({ children, cargando }: { children: string; cargando: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="min-h-[44px] w-full rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
-      style={{ background: VERDE, fontWeight: 600, outlineColor: VERDE }}
-    >
-      {pending ? cargando : children}
-    </button>
   );
 }
 

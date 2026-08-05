@@ -3,6 +3,8 @@ import {
   validarPaleta,
   validarFotos,
   validarAuth,
+  validarPerfil,
+  validarPassword,
   limpiarBusqueda,
   armarWhatsapp,
   destinoSeguro,
@@ -149,6 +151,35 @@ test("el whatsapp se guarda como un solo texto con el prefijo adelante", () => {
   expect(armarWhatsapp("+54 9", "11 5555 5555")).toBe("+54 9 11 5555 5555");
   expect(armarWhatsapp("  +54 9  ", "  1155555555 ")).toBe("+54 9 1155555555");
   expect(armarWhatsapp("", "1155555555")).toBe("1155555555");
+});
+
+// --- cuenta ---------------------------------------------------------------
+
+test("el perfil pide nombre, apellido y un whatsapp con digitos suficientes", () => {
+  const perfil = { nombre: "Ana", apellido: "Diaz", whatsapp: "+54 9 11 5555 5555" };
+  expect(validarPerfil(perfil)).toEqual({});
+
+  expect(validarPerfil({ ...perfil, nombre: "" }).nombre).toBeDefined();
+  expect(validarPerfil({ ...perfil, apellido: "" }).apellido).toBeDefined();
+  expect(validarPerfil({ ...perfil, whatsapp: "" }).whatsapp).toBeDefined();
+  expect(validarPerfil({ ...perfil, whatsapp: "11 5555" }).whatsapp).toBeDefined();
+  expect(validarPerfil({ ...perfil, whatsapp: "no tengo" }).whatsapp).toBeDefined();
+  expect(validarPerfil({ ...perfil, whatsapp: "1".repeat(16) }).whatsapp).toBeDefined();
+  expect(validarPerfil({ ...perfil, nombre: "a".repeat(61) }).nombre).toBeDefined();
+});
+
+test("la contraseña nueva tiene que ser larga, distinta y estar repetida igual", () => {
+  const ok = { actual: "claveVieja", nueva: "claveNueva1", repetir: "claveNueva1" };
+  expect(validarPassword(ok)).toEqual({});
+
+  expect(validarPassword({ ...ok, actual: "" }).actual).toBeDefined();
+  expect(validarPassword({ ...ok, nueva: "corta", repetir: "corta" }).nueva).toBeDefined();
+  // repetir la misma no es un cambio
+  expect(
+    validarPassword({ actual: "claveVieja", nueva: "claveVieja", repetir: "claveVieja" })
+      .nueva,
+  ).toBeDefined();
+  expect(validarPassword({ ...ok, repetir: "otraCosa" }).repetir).toBeDefined();
 });
 
 // --- busqueda -------------------------------------------------------------

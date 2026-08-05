@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Search, Plus, LayoutGrid, LogOut, LogIn } from "lucide-react";
+import { Search, Plus, LayoutGrid, LogOut, LogIn, UserRound } from "lucide-react";
 import { Logo } from "./logo";
 import { cerrarSesion } from "@/app/auth/actions";
 
@@ -80,23 +80,80 @@ export function Header({
         {/* min-w-0: sin esto el flex item no baja de su ancho de contenido y empuja al header fuera de pantalla */}
         <Buscador id="buscar-desktop" className="hidden min-w-0 flex-1 md:block" />
 
-        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-          {usuario && (
-            <Link
-              href="/mis-publicaciones"
-              aria-current={enMisPaletas ? "page" : undefined}
-              className="hidden min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex"
-              style={{
-                color: enMisPaletas ? "#0F5132" : "#5B6470",
-                fontWeight: 600,
-                outlineColor: "#0F5132",
-              }}
-            >
-              <LayoutGrid size={16} aria-hidden /> Mis paletas
-            </Link>
-          )}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <Link
+            href="/publicar"
+            className="flex h-11 min-h-[44px] w-11 items-center justify-center gap-1.5 rounded-full text-[14px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto sm:rounded-[14px] sm:px-3.5"
+            style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+          >
+            <Plus size={18} aria-hidden />
+            <span className="hidden sm:inline">Publicar</span>
+            <span className="sr-only sm:hidden">Publicar paleta</span>
+          </Link>
 
-          {!usuario && (
+          {usuario ? (
+            <>
+              <Link
+                href="/mis-publicaciones"
+                aria-current={enMisPaletas ? "page" : undefined}
+                className="flex h-11 min-h-[44px] w-11 items-center justify-center gap-1.5 rounded-full text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto sm:rounded-[14px] sm:px-3"
+                style={{
+                  color: enMisPaletas ? "#0F5132" : "#5B6470",
+                  background: enMisPaletas ? "#EAF1EC" : undefined,
+                  fontWeight: 600,
+                  outlineColor: "#0F5132",
+                }}
+              >
+                <LayoutGrid size={18} aria-hidden />
+                <span className="hidden sm:inline">Mis paletas</span>
+                <span className="sr-only sm:hidden">Mis paletas</span>
+              </Link>
+
+              {/* ponytail: <details> nativo, sin JS ni click-afuera. Se cierra al
+                  navegar o al volver a tocar el avatar. Si molesta quedar abierto,
+                  el upgrade es un onBlur en el contenedor. */}
+              <details className="relative">
+                <summary
+                  className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden"
+                  style={{
+                    background: "#F2F1ED",
+                    border: "1px solid #E6E4DF",
+                    color: "#0F5132",
+                    fontWeight: 700,
+                    outlineColor: "#0F5132",
+                  }}
+                >
+                  <span aria-hidden>{iniciales}</span>
+                  <span className="sr-only">Mi cuenta</span>
+                </summary>
+
+                <div
+                  className="absolute right-0 top-[calc(100%+8px)] z-40 w-56 rounded-[14px] p-1.5 shadow-lg"
+                  style={{ background: "#FFFFFF", border: "1px solid #E6E4DF" }}
+                >
+                  <p className="px-3 py-2 text-[13px]" style={{ color: "#5B6470" }}>
+                    {nombreCompleto}
+                  </p>
+                  <Link
+                    href="/cuenta"
+                    className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
+                    style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+                  >
+                    <UserRound size={16} aria-hidden /> Mi cuenta
+                  </Link>
+                  <form action={cerrarSesion}>
+                    <button
+                      type="submit"
+                      className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-left text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
+                      style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+                    >
+                      <LogOut size={16} aria-hidden /> Cerrar sesión
+                    </button>
+                  </form>
+                </div>
+              </details>
+            </>
+          ) : (
             <Link
               href="/auth"
               className="flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -104,38 +161,6 @@ export function Header({
             >
               <LogIn size={16} aria-hidden /> Ingresar
             </Link>
-          )}
-
-          <Link
-            href="/publicar"
-            className="flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3.5 py-2 text-[14px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
-          >
-            <Plus size={16} aria-hidden /> <span className="hidden sm:inline">Publicar</span>
-          </Link>
-
-          {usuario && (
-            <>
-              <Link
-                href="/mis-publicaciones"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[13px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ background: "#0F5132", fontWeight: 700, outlineColor: "#0F5132" }}
-              >
-                <span aria-hidden>{iniciales}</span>
-                <span className="sr-only">{nombreCompleto}</span>
-              </Link>
-
-              <form action={cerrarSesion}>
-                <button
-                  type="submit"
-                  className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-                  style={{ color: "#5B6470", outlineColor: "#0F5132" }}
-                >
-                  <LogOut size={18} aria-hidden />
-                  <span className="sr-only">Cerrar sesión</span>
-                </button>
-              </form>
-            </>
           )}
         </div>
       </div>
