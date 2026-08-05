@@ -10,6 +10,8 @@ import {
   X,
   ImagePlus,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   FORMAS,
@@ -18,6 +20,8 @@ import {
   Forma,
   estadoLabel,
 } from "@/lib/paletas";
+import { validarFotos } from "@/lib/validar";
+import { createClient } from "@/lib/supabase/client";
 import { publicar, type PublicarState } from "@/app/(main)/publicar/actions";
 
 const inputStyle = (error?: string): React.CSSProperties => ({
@@ -76,6 +80,34 @@ function Campo({
   );
 }
 
+function MoverFoto({
+  hacia,
+  indice,
+  disabled,
+  onClick,
+}: {
+  hacia: "izquierda" | "derecha";
+  indice: number;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const Icono = hacia === "izquierda" ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex h-11 w-11 items-center justify-center rounded-[10px] disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={{ color: "#14171A", outlineColor: "#0F5132" }}
+    >
+      <Icono size={18} aria-hidden />
+      <span className="sr-only">
+        Mover la foto {indice + 1} a la {hacia}
+      </span>
+    </button>
+  );
+}
+
 function Submit() {
   const { pending } = useFormStatus();
   return (
@@ -90,12 +122,50 @@ function Submit() {
   );
 }
 
-export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string }[] }) {
-  const [state, formAction] = useActionState<PublicarState, FormData>(publicar, {});
+export function PublishScreen({
+  marcas,
+  userId,
+}: {
+  marcas: { id: number; nombre: string }[];
+  userId: string;
+}) {
+  const [fotos, setFotos] = useState<{ file: File; url: string }[]>([]);
+
+  // Las fotos se suben desde el navegador directo al storage y al server action
+  // solo le llegan las URLs: un form con 4 fotos de celular pasa los limites de
+  // body de un server action y la request muere antes de llegar.
+  const subirYPublicar = async (
+    prev: PublicarState,
+    fd: FormData,
+  ): Promise<PublicarState> => {
+    const mensaje = validarFotos(
+      fotos.map(({ file }) => ({ tipo: file.type, bytes: file.size })),
+    );
+    if (mensaje) return { ...prev, error: undefined, campos: { fotos: mensaje } };
+
+    const supabase = createClient();
+    const urls: string[] = [];
+    // ponytail: si falla a mitad quedan fotos huerfanas en el bucket; limpiarlas
+    // con un job de storage si alguna vez molesta.
+    for (const { file } of fotos) {
+      const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().slice(0, 5);
+      // La policy del bucket exige que la carpeta sea el uid del que sube.
+      const ruta = `${userId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("paletas")
+        .upload(ruta, file, { contentType: file.type });
+      if (error) return { ...prev, error: "No pudimos subir las fotos. Probá de nuevo." };
+      urls.push(supabase.storage.from("paletas").getPublicUrl(ruta).data.publicUrl);
+    }
+
+    urls.forEach((u) => fd.append("fotos", u));
+    return publicar(prev, fd);
+  };
+
+  const [state, formAction] = useActionState<PublicarState, FormData>(subirYPublicar, {});
   const v = state.valores ?? {};
   const e = state.campos ?? {};
 
-  const [fotos, setFotos] = useState<{ file: File; url: string }[]>([]);
   const [drag, setDrag] = useState(false);
   const [forma, setForma] = useState<Forma>((v.forma as Forma) || "Diamante");
   const [estado, setEstado] = useState(Number(v.estado) || 9);
@@ -103,26 +173,25 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
   const [desc, setDesc] = useState(v.descripcion ?? "");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // El <input type=file> es la fuente de verdad para el submit, asi que hay que
-  // reescribir su FileList cuando se agrega o se saca una foto.
-  const sincronizar = (lista: typeof fotos) => {
-    const dt = new DataTransfer();
-    lista.forEach(({ file }) => dt.items.add(file));
-    if (fileRef.current) fileRef.current.files = dt.files;
-    setFotos(lista);
-  };
-
   const agregar = (files: FileList | null) => {
     if (!files) return;
     const nuevas = Array.from(files)
       .slice(0, 4 - fotos.length)
       .map((file) => ({ file, url: URL.createObjectURL(file) }));
-    sincronizar([...fotos, ...nuevas]);
+    setFotos([...fotos, ...nuevas]);
+    // Sin esto, volver a elegir el mismo archivo no dispara el change.
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const sacar = (i: number) => {
     URL.revokeObjectURL(fotos[i].url);
-    sincronizar(fotos.filter((_, x) => x !== i));
+    setFotos(fotos.filter((_, x) => x !== i));
+  };
+
+  const mover = (i: number, hacia: number) => {
+    const lista = [...fotos];
+    [lista[i], lista[i + hacia]] = [lista[i + hacia], lista[i]];
+    setFotos(lista);
   };
 
   const precioNum = precio.replace(/\D/g, "");
@@ -165,24 +234,58 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
           <legend className="mb-1.5 text-[14px]" style={{ color: "#14171A" }}>
             Fotos (hasta 4)<Obligatorio />
           </legend>
-          <div className="grid grid-cols-4 gap-2.5">
+          <p className="mb-2 text-[13px]" style={{ color: "#5B6470" }}>
+            La primera es la portada. Ordenalas con las flechas.
+          </p>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {fotos.map(({ url }, i) => (
-              <div
-                key={url}
-                className="relative overflow-hidden rounded-[14px]"
-                style={{ aspectRatio: "1", background: "#F2F1ED" }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- object URL local, no pasa por el optimizador */}
-                <img src={url} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => sacar(i)}
-                  className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full focus-visible:outline-2"
-                  style={{ background: "rgba(20,23,26,0.65)", color: "#fff", outlineColor: "#FFFFFF" }}
+              <div key={url}>
+                <div
+                  className="relative overflow-hidden rounded-[14px]"
+                  style={{ aspectRatio: "1", background: "#F2F1ED" }}
                 >
-                  <X size={13} aria-hidden />
-                  <span className="sr-only">Sacar la foto {i + 1}</span>
-                </button>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- object URL local, no pasa por el optimizador */}
+                  <img src={url} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+                  {i === 0 && (
+                    <span
+                      className="absolute bottom-1 left-1 rounded-full px-2 py-0.5 text-[11px]"
+                      style={{ background: "#C7F751", color: "#14171A", fontWeight: 700 }}
+                    >
+                      Portada
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => sacar(i)}
+                    className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    style={{ color: "#FFFFFF", outlineColor: "#FFFFFF" }}
+                  >
+                    <span
+                      className="flex h-7 w-7 items-center justify-center rounded-full"
+                      style={{ background: "rgba(20,23,26,0.65)" }}
+                    >
+                      <X size={13} aria-hidden />
+                    </span>
+                    <span className="sr-only">Sacar la foto {i + 1}</span>
+                  </button>
+                </div>
+                <div className="mt-0.5 flex items-center justify-between">
+                  <MoverFoto
+                    hacia="izquierda"
+                    indice={i}
+                    disabled={i === 0}
+                    onClick={() => mover(i, -1)}
+                  />
+                  <span className="text-[12px]" style={{ color: "#5B6470" }}>
+                    {i + 1}/{fotos.length}
+                  </span>
+                  <MoverFoto
+                    hacia="derecha"
+                    indice={i}
+                    disabled={i === fotos.length - 1}
+                    onClick={() => mover(i, 1)}
+                  />
+                </div>
               </div>
             ))}
             {fotos.length < 4 && (
@@ -199,9 +302,10 @@ export function PublishScreen({ marcas }: { marcas: { id: number; nombre: string
                   setDrag(false);
                   agregar(ev.dataTransfer.files);
                 }}
-                className="flex flex-col items-center justify-center gap-1 rounded-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="flex flex-col items-center justify-center gap-1 self-start rounded-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                 style={{
                   aspectRatio: "1",
+                  width: "100%",
                   border: `1.5px dashed ${drag ? "#0F5132" : e.fotos ? "#D4183D" : "#E6E4DF"}`,
                   background: drag ? "rgba(15,81,50,0.04)" : "#FAFAF8",
                   color: "#5B6470",
