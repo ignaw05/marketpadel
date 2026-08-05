@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PackageOpen, Plus, Eye, CheckCircle2, Star } from "lucide-react";
+import { PackageOpen, Plus, Eye, CheckCircle2, Star, AlertCircle } from "lucide-react";
 import { ImageWithFallback } from "../image-with-fallback";
 import { AccionesPaleta } from "../acciones-paleta";
 import { PromocionarDialog } from "../promocionar-dialog";
@@ -101,13 +101,39 @@ function Row({ paleta }: { paleta: Paleta }) {
   );
 }
 
+// La vuelta de MercadoPago no confirma nada: quien promociona es el webhook, y
+// el usuario puede llegar antes. Por eso "exito" no promete que ya este activa.
+const AVISO_PAGO = {
+  exito: {
+    texto: "Pago aprobado. La promoción se activa en unos segundos; si todavía no la ves, recargá.",
+    fondo: "rgba(15,81,50,0.08)",
+    color: "#0F5132",
+    alerta: false,
+  },
+  pendiente: {
+    texto: "Tu pago quedó pendiente. Apenas MercadoPago lo apruebe, la promoción se activa sola.",
+    fondo: "#F2F1ED",
+    color: "#14171A",
+    alerta: false,
+  },
+  error: {
+    texto: "El pago no se completó. No te cobramos nada, podés intentar de nuevo.",
+    fondo: "rgba(212,24,61,0.08)",
+    color: "#D4183D",
+    alerta: true,
+  },
+} as const;
+
 export function MyListings({
   paletas,
   publicada,
+  pago,
 }: {
   paletas: Paleta[];
   publicada?: boolean;
+  pago?: string;
 }) {
+  const aviso = AVISO_PAGO[pago as keyof typeof AVISO_PAGO];
   const activas = paletas.filter((p) => p.estado_publicacion === "activa").length;
   const vendidas = paletas.filter((p) => p.estado_publicacion === "vendida").length;
   const visitas = paletas.reduce((s, p) => s + p.visitas, 0);
@@ -123,6 +149,21 @@ export function MyListings({
           style={{ background: "rgba(15,81,50,0.08)", color: "#0F5132" }}
         >
           <CheckCircle2 size={16} aria-hidden /> ¡Paleta publicada! Ya está visible para todos.
+        </p>
+      )}
+
+      {aviso && (
+        <p
+          role={aviso.alerta ? "alert" : "status"}
+          className="mt-4 flex items-start gap-2 rounded-[14px] p-3 text-[14px]"
+          style={{ background: aviso.fondo, color: aviso.color, lineHeight: 1.5 }}
+        >
+          {aviso.alerta ? (
+            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden />
+          ) : (
+            <Star size={16} className="mt-0.5 shrink-0" aria-hidden />
+          )}
+          {aviso.texto}
         </p>
       )}
 

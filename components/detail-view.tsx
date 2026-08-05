@@ -30,7 +30,7 @@ export function DetailView({
   const fotos = paleta.fotos.length ? paleta.fotos : [""];
 
   const texto = encodeURIComponent(
-    `Hola! Me interesa tu ${titulo} publicada en PaletaMarket.`,
+    `Hola! Me interesa tu ${titulo} publicada en Paletita.`,
   );
   const tel = vendedor.whatsapp?.replace(/\D/g, "");
   const wa = tel ? `https://wa.me/${tel}?text=${texto}` : `https://wa.me/?text=${texto}`;

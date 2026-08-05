@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PaletaMarket",
+  title: "Paletita",
   description: "Comprá y vendé paletas de pádel usadas entre jugadores en Argentina.",
 };
 

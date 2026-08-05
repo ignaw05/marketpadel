@@ -21,7 +21,7 @@ llega al Route Handler, que lo canjea con `verifyOtp`.
 **Proyecto remoto:** hay que pegarla a mano.
 
 1. Dashboard → Authentication → Emails → *Confirm signup*
-2. Asunto: `Confirmá tu cuenta en PaletaMarket`
+2. Asunto: `Confirmá tu cuenta en Paletita`
 3. Pegar el contenido de `confirmacion.html` en el body
 4. Authentication → URL Configuration → *Redirect URLs*: agregar
    `http://localhost:3000/auth/confirmar` y la URL de producción cuando exista.
@@ -34,7 +34,7 @@ role key. Con uno, sería:
 ```
 PATCH https://api.supabase.com/v1/projects/{ref}/config/auth
 { "mailer_templates_confirmation_content": "<el html>",
-  "mailer_subjects_confirmation": "Confirmá tu cuenta en PaletaMarket" }
+  "mailer_subjects_confirmation": "Confirmá tu cuenta en Paletita" }
 ```
 
 ## El SMTP por defecto no sirve para usuarios reales

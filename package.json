@@ -1,5 +1,5 @@
 {
-  "name": "marketpadel",
+  "name": "paletita",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,6 +14,7 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.0",
     "lucide-react": "^1.28.0",
+    "mercadopago": "^3.3.0",
     "motion": "^12.43.0",
     "next": "16.2.12",
     "react": "19.2.4",

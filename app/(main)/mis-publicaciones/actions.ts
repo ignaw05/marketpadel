@@ -1,8 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { Preference } from "mercadopago";
 import { createClient } from "@/lib/supabase/server";
-import { PLANES, promoVigente, vencimiento, type EstadoPublicacion } from "@/lib/paletas";
+import { BASE, armarReferencia, mp } from "@/lib/mercadopago";
+import { PLANES, promoVigente, type EstadoPublicacion } from "@/lib/paletas";
 
 const ESTADOS_VALIDOS: EstadoPublicacion[] = ["activa", "pausada", "vendida"];
 
@@ -40,6 +43,9 @@ export async function promocionar(fd: FormData) {
   const plan = PLANES.find((p) => p.dias === Number(fd.get("dias")));
   if (!id || !plan) return;
 
+  // MercadoPago rechaza las back_urls relativas con un error que no dice nada.
+  if (!BASE) throw new Error("Falta NEXT_PUBLIC_BASE_URL");
+
   const { supabase, uid } = await sesion();
 
   // Que sea propia, que este activa y que no tenga una promo corriendo. La RLS
@@ -47,7 +53,7 @@ export async function promocionar(fd: FormData) {
   // y promocionar dos veces seguidas seria pagar dos veces por lo mismo.
   const { data: paleta } = await supabase
     .from("paletas")
-    .select("id, promociones (hasta)")
+    .select("id, modelo, promociones (hasta), marcas (nombre)")
     .eq("id", id)
     .eq("vendedor_id", uid)
     .eq("estado_publicacion", "activa")
@@ -55,19 +61,35 @@ export async function promocionar(fd: FormData) {
 
   if (!paleta || promoVigente(paleta.promociones)) return;
 
-  // ponytail: sin cobrar. Con MercadoPago esto pasa a hacerlo el webhook, con
-  // origen 'individual' y el pago_id de la preferencia aprobada.
-  const { error } = await supabase.from("promociones").insert({
-    paleta_id: id,
-    origen: "cortesia",
-    hasta: vencimiento(plan.dias).toISOString(),
+  // El titulo que ve el comprador en MercadoPago sale de la base, no del form.
+  const marca = (paleta.marcas as unknown as { nombre: string } | null)?.nombre ?? "";
+
+  // El precio sale de PLANES: del form llega la duracion y nada mas.
+  const pref = await new Preference(mp()).create({
+    body: {
+      items: [
+        {
+          id,
+          title: `Promocionar ${marca} ${paleta.modelo} por ${plan.dias} días`,
+          quantity: 1,
+          unit_price: plan.precio,
+          currency_id: "ARS",
+        },
+      ],
+      external_reference: armarReferencia(id, plan.dias),
+      back_urls: {
+        success: `${BASE}/mis-publicaciones?pago=exito`,
+        failure: `${BASE}/mis-publicaciones?pago=error`,
+        pending: `${BASE}/mis-publicaciones?pago=pendiente`,
+      },
+      auto_return: "approved",
+      notification_url: `${BASE}/api/mercadopago/webhook`,
+    },
   });
 
-  if (error) throw error;
-
-  revalidatePath("/mis-publicaciones");
-  revalidatePath("/");
-  revalidatePath(`/paletas/${id}`);
+  // Quien promociona es el webhook, no esta pantalla: el usuario puede cerrar el
+  // navegador antes de volver. Fuera de cualquier try, redirect() tira a proposito.
+  redirect(pref.init_point!);
 }
 
 export async function eliminar(fd: FormData) {

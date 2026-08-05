@@ -173,19 +173,64 @@ try {
   assert.equal(tocada.length, 0, "otro usuario no deberia poder editar");
   paso("RLS bloquea editar la paleta de otro");
 
-  // 10. promocionar (accion promocionar, origen 'cortesia' hasta que entre MP)
+  // 10. nadie se promociona gratis desde el navegador: eso ahora se paga
   const hasta = new Date(Date.now() + 15 * 86_400_000).toISOString();
 
-  const { error: ePromoAjena } = await b.cliente
-    .from("promociones")
-    .insert({ paleta_id: creada.id, origen: "cortesia", hasta });
-  assert.ok(ePromoAjena, "otro usuario no deberia poder promocionar tu paleta");
-  paso("RLS bloquea promocionar la paleta de otro");
+  for (const [quien, cliente] of [["ajena", b.cliente], ["propia", a.cliente]]) {
+    const { error } = await cliente
+      .from("promociones")
+      .insert({ paleta_id: creada.id, origen: "cortesia", hasta });
+    assert.ok(error, `un usuario logueado no deberia poder promocionar la ${quien}`);
+  }
+  paso("RLS bloquea promocionar sin pagar, propia o ajena");
 
-  const { error: ePromo } = await a.cliente
+  // La RPC del webhook tampoco esta al alcance del usuario logueado.
+  const { error: eRpcAjena } = await a.cliente.rpc("registrar_promocion_pagada", {
+    p_mp_payment_id: `hack-${sufijo}`,
+    p_paleta_id: creada.id,
+    p_dias: 30,
+    p_monto: 1,
+    p_estado: "aprobado",
+    p_promocionar: true,
+  });
+  assert.ok(eRpcAjena, "registrar_promocion_pagada no deberia ser ejecutable por authenticated");
+  paso("la RPC del webhook solo la puede llamar el service role");
+
+  // 11. el webhook: mismo pago dos veces cobra y promociona una sola vez
+  const mpId = `check-${sufijo}`;
+  const llamar = (estado, extra = {}) =>
+    admin.rpc("registrar_promocion_pagada", {
+      p_mp_payment_id: mpId,
+      p_paleta_id: creada.id,
+      p_dias: 30,
+      p_monto: 3000,
+      p_estado: estado,
+      p_promocionar: true,
+      ...extra,
+    });
+
+  const { data: rPendiente } = await llamar("pendiente");
+  assert.equal(rPendiente, "no_aprobado", "un pago pendiente no entrega la promocion");
+
+  const { data: rAprobado, error: eAprobado } = await llamar("aprobado");
+  assert.equal(eAprobado, null, `rpc: ${eAprobado?.message}`);
+  assert.equal(rAprobado, "promocionada", "la aprobacion posterior si tiene que promocionar");
+
+  const { data: rRepetido } = await llamar("aprobado");
+  assert.equal(rRepetido, "repetido", "MP reenvia el mismo evento: no se promociona dos veces");
+
+  const { data: pagos } = await admin.from("pagos").select("estado, monto").eq("mp_payment_id", mpId);
+  assert.equal(pagos.length, 1, "un solo pago para el mismo mp_payment_id");
+  assert.equal(pagos[0].estado, "aprobado", "el estado se pisa, no se descarta");
+
+  const { data: promos } = await admin
     .from("promociones")
-    .insert({ paleta_id: creada.id, origen: "cortesia", hasta });
-  assert.equal(ePromo, null, `promocionar: ${ePromo?.message}`);
+    .select("origen, pago_id")
+    .eq("paleta_id", creada.id);
+  assert.equal(promos.length, 1, "una promocion por pago");
+  assert.equal(promos[0].origen, "individual");
+  assert.ok(promos[0].pago_id, "la individual tiene que quedar atada a su pago");
+  paso("el webhook es idempotente: mismo pago, una sola promocion");
 
   const { data: destacada } = await anon
     .from("paletas_publicas")
@@ -193,9 +238,9 @@ try {
     .eq("id", creada.id)
     .single();
   assert.equal(destacada.promocionada, true, "la vista tendria que verla promocionada");
-  paso("promocionar la propia la marca como destacada en el feed");
+  paso("el pago aprobado la marca como destacada en el feed");
 
-  // 11. pausar la saca del feed publico (accion cambiarEstado)
+  // 12. pausar la saca del feed publico (accion cambiarEstado)
   await a.cliente
     .from("paletas")
     .update({ estado_publicacion: "pausada" })
@@ -209,7 +254,7 @@ try {
   assert.equal(pausada, null, "una pausada no deberia aparecer en el feed");
   paso("pausar saca la publicacion del feed publico");
 
-  // 12. pero sigue en "mis publicaciones" (listarMisPaletas)
+  // 13. pero sigue en "mis publicaciones" (listarMisPaletas)
   const { data: mias, error: eMias } = await a.cliente
     .from("paletas")
     .select(
@@ -224,7 +269,7 @@ try {
   assert.equal(mias[0].promociones.length, 1, "el embed de promociones para el badge");
   paso("listarMisPaletas ve la pausada, la marca y su promocion");
 
-  // 13. borrar la paleta y su foto (accion eliminar)
+  // 14. borrar la paleta y su foto (accion eliminar)
   await a.cliente.from("paletas").delete().eq("id", creada.id).eq("vendedor_id", a.uid);
   const rutaDerivada = publicUrl.split("/paletas/").pop();
   assert.equal(rutaDerivada, ruta, "la ruta que deriva la accion eliminar");

@@ -122,9 +122,6 @@ export const promoVigente = (
   ahora: Date = new Date(),
 ): boolean => (promos ?? []).some((p) => new Date(p.hasta) > ahora);
 
-export const vencimiento = (dias: number, desde: Date = new Date()): Date =>
-  new Date(desde.getTime() + dias * 86_400_000);
-
 /** Lado maximo que guardamos: la card mas grande del feed no pasa de 640px. */
 export const MAX_LADO = 1600;
 

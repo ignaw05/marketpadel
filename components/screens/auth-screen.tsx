@@ -246,7 +246,7 @@ function EsperandoConfirmacion({
       </h1>
       <p className="mt-2 text-[15px]" style={{ color: "#5B6470", lineHeight: 1.6 }}>
         Te mandamos un link a <strong style={{ color: "#14171A" }}>{email}</strong> para
-        confirmar la cuenta. Abrilo y entrás derecho a PaletaMarket.
+        confirmar la cuenta. Abrilo y entrás derecho a Paletita.
       </p>
       <p className="mt-3 text-[13px]" style={{ color: "#5B6470" }}>
         Si no lo ves, fijate en spam o en promociones. El link vence en una hora.
