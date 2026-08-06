@@ -18,6 +18,7 @@ import {
   FORMAS,
   ANIOS,
   PROVINCIAS,
+  DURACION_DIAS,
   Forma,
   estadoLabel,
   medidas,
@@ -364,7 +365,7 @@ export function PublishScreen({
   const [provincia, setProvincia] = useState(paleta?.provincia ?? "");
   const [ciudad, setCiudad] = useState(paleta?.ciudad ?? "");
   const [forma, setForma] = useState<Forma>(paleta?.forma ?? "Diamante");
-  const [estado, setEstado] = useState(paleta?.estado ?? 9);
+  const [estado, setEstado] = useState(paleta?.estado ?? 6);
   const [precio, setPrecio] = useState(paleta ? String(paleta.precio) : "");
   const [desc, setDesc] = useState(paleta?.descripcion ?? "");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -676,7 +677,7 @@ export function PublishScreen({
             id="estado"
             name="estado"
             type="range"
-            min={6}
+            min={1}
             max={10}
             value={estado}
             onChange={(ev) => setEstado(Number(ev.target.value))}
@@ -684,7 +685,7 @@ export function PublishScreen({
             style={{ accentColor: "#0F5132" }}
           />
           <div className="flex justify-between text-[11px]" style={{ color: "#5B6470" }}>
-            <span>6/10</span>
+            <span>1/10</span>
             <span>10/10</span>
           </div>
         </Campo>
@@ -788,6 +789,15 @@ export function PublishScreen({
             style={inputStyle(e.descripcion)}
           />
         </Campo>
+
+        {/* Ultima linea del formulario: en mobile queda arriba de la barra fija, en
+            desktop justo arriba del boton. Un solo lugar para los dos. */}
+        {!editando && (
+          <p className="text-[13px]" style={{ color: "#5B6470", lineHeight: 1.5 }}>
+            Tu publicación se muestra {DURACION_DIAS} días. Después la renovás con un
+            toque desde Mis paletas.
+          </p>
+        )}
 
         <div className="hidden md:block">
           <Submit editando={editando} />
