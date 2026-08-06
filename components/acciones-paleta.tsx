@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { MoreVertical, Pencil, PauseCircle, PlayCircle, Trash2, CheckCircle2 } from "lucide-react";
 import { cambiarEstado, eliminar } from "@/app/(main)/mis-publicaciones/actions";
+import { PromocionarDialog } from "./promocionar-dialog";
 import type { Paleta } from "@/lib/paletas";
 
 const itemClass =
@@ -79,6 +80,14 @@ export function AccionesPaleta({ paleta }: { paleta: Paleta }) {
             >
               <Pencil size={15} aria-hidden /> Editar
             </Link>
+
+            {activa && !paleta.promocionada && (
+              <PromocionarDialog
+                id={paleta.id}
+                titulo={`${paleta.marca} ${paleta.modelo}`}
+                className={itemClass}
+              />
+            )}
 
             {!vendida && (
               <form action={cambiarEstado} onSubmit={() => setMenu(false)}>
