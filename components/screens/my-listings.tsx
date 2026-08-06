@@ -3,7 +3,15 @@ import { PackageOpen, Plus, Eye, CheckCircle2, Star, AlertCircle } from "lucide-
 import { ImageWithFallback } from "../image-with-fallback";
 import { AccionesPaleta } from "../acciones-paleta";
 import { PromocionarDialog } from "../promocionar-dialog";
-import { Paleta, formatPrecio, foto } from "@/lib/paletas";
+import { Renovar } from "../renovar";
+import {
+  Paleta,
+  formatPrecio,
+  foto,
+  diasParaVencer,
+  puedeRenovar,
+  vencida,
+} from "@/lib/paletas";
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -26,14 +34,20 @@ const BADGE = {
   pausada: { texto: "Pausada", fondo: "#F2F1ED", color: "#5B6470" },
   vendida: { texto: "Vendida", fondo: "rgba(20,23,26,0.08)", color: "#14171A" },
   eliminada: { texto: "Eliminada", fondo: "#F2F1ED", color: "#5B6470" },
+  vencida: { texto: "Vencida", fondo: "rgba(212,24,61,0.08)", color: "#D4183D" },
 } as const;
 
-function Row({ paleta }: { paleta: Paleta }) {
-  const badge = BADGE[paleta.estado_publicacion ?? "activa"];
+/** El vencimiento solo cambia algo mientras la publicacion sigue en juego. */
+const EN_JUEGO = ["activa", "pausada"];
+
+function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boolean }) {
+  const estado = paleta.estado_publicacion ?? "activa";
+  const expirada = vencida(paleta);
+  const enJuego = EN_JUEGO.includes(estado);
+  const badge = enJuego && expirada ? BADGE.vencida : BADGE[estado];
+  const dias = diasParaVencer(paleta.vence_at);
+  const avisar = enJuego && (expirada || puedeRenovar(paleta));
   const titulo = `${paleta.marca} ${paleta.modelo}`;
-  // Promocionar una pausada o vendida no la muestra en ningun lado: no se ofrece.
-  const puedePromocionar =
-    (paleta.estado_publicacion ?? "activa") === "activa" && !paleta.promocionada;
 
   return (
     <div
@@ -73,26 +87,38 @@ function Row({ paleta }: { paleta: Paleta }) {
           >
             {badge.texto}
           </span>
-          {paleta.promocionada && (
+          {paleta.promocionada ? (
             <span
               className="flex items-center gap-1 rounded-full px-2 py-0.5"
               style={{ background: "#0F5132", color: "#FFFFFF", fontWeight: 600 }}
             >
               <Star size={11} aria-hidden /> Promocionada
             </span>
-          )}
+          ) : estado === "activa" && !expirada ? (
+            <PromocionarDialog
+              id={paleta.id}
+              titulo={`${paleta.marca} ${paleta.modelo}`}
+              auto={recienPublicada}
+              className="inline-flex items-center gap-1 rounded-full border border-[#0F5132] px-2.5 py-0.5 text-[12px] font-semibold text-[#0F5132] hover:bg-[rgba(15,81,50,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5132]"
+            />
+          ) : null}
           <span className="flex items-center gap-1">
             <Eye size={12} aria-hidden /> {paleta.visitas.toLocaleString("es-AR")}
             <span className="sr-only">visitas</span>
           </span>
         </div>
 
-        {puedePromocionar && (
-          <PromocionarDialog
-            id={paleta.id}
-            titulo={titulo}
-            className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[#0F5132] px-3.5 text-[13px] font-semibold text-[#0F5132] hover:bg-[rgba(15,81,50,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5132]"
-          />
+        {avisar && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className="text-[12px]" style={{ color: expirada ? "#D4183D" : "#5B6470" }}>
+              {expirada
+                ? "Ya no se muestra en las búsquedas."
+                : dias === 0
+                  ? "Vence hoy."
+                  : `Vence en ${dias} ${dias === 1 ? "día" : "días"}.`}
+            </p>
+            <Renovar id={paleta.id} titulo={titulo} />
+          </div>
         )}
       </div>
 
@@ -131,12 +157,16 @@ export function MyListings({
   pago,
 }: {
   paletas: Paleta[];
-  publicada?: boolean;
+  /** Id de la que se acaba de publicar: abre sola la invitacion a promocionar. */
+  publicada?: string;
   editada?: boolean;
   pago?: string;
 }) {
   const aviso = AVISO_PAGO[pago as keyof typeof AVISO_PAGO];
-  const activas = paletas.filter((p) => p.estado_publicacion === "activa").length;
+  // Una vencida no cuenta como activa: no la ve nadie.
+  const activas = paletas.filter(
+    (p) => p.estado_publicacion === "activa" && !vencida(p),
+  ).length;
   const vendidas = paletas.filter((p) => p.estado_publicacion === "vendida").length;
   const visitas = paletas.reduce((s, p) => s + p.visitas, 0);
 
@@ -212,7 +242,9 @@ export function MyListings({
             </Link>
           </div>
         ) : (
-          paletas.map((p) => <Row key={p.id} paleta={p} />)
+          paletas.map((p) => (
+            <Row key={p.id} paleta={p} recienPublicada={p.id === publicada} />
+          ))
         )}
       </div>
     </div>
