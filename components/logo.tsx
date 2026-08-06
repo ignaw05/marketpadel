@@ -14,7 +14,7 @@ export function Logo({ className = "" }: { className?: string }) {
       <span
         style={{ color: "#14171A", fontWeight: 800, letterSpacing: "-0.02em" }}
       >
-        Palet<span style={{ color: "#0F5132" }}>ita</span>
+        Paletita
       </span>
     </div>
   );
