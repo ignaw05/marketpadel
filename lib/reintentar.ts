@@ -7,25 +7,33 @@
  * despues el mismo token sirve. Sin esto, la pantalla se cae a error.tsx por
  * un desfasaje que ya se resolvio.
  *
- * ponytail: un solo reintento con espera fija. Si aparecen mas codigos
- * transitorios, backoff exponencial.
+ * El desfasaje medido contra el proyecto es de 1 a 2 segundos, pero un solo
+ * reintento a 1s no alcanzaba: el segundo intento puede caer en otro nodo de
+ * PostgREST, con su propio reloj. De ahi las esperas crecientes.
+ *
+ * ponytail: backoff fijo, sin jitter. Si aparecen mas codigos transitorios,
+ * agregarlos a la lista antes de tocar la estrategia.
  */
 
 export const CODIGOS_REINTENTABLES = ["PGRST303"];
+
+/** Aguanta un reloj hasta ~3s atrasado sin llegar a error.tsx. */
+export const ESPERAS_MS = [300, 1000, 2000];
 
 type Respuesta<T> = { data: T; error: { code?: string } | null };
 
 export async function conReintento<T>(
   /** Tiene que rearmar la consulta: los builders de Supabase se usan una sola vez. */
   correr: () => PromiseLike<Respuesta<T>>,
-  esperaMs = 1000,
+  esperas: number[] = ESPERAS_MS,
   dormir: (ms: number) => Promise<void> = (ms) =>
     new Promise((listo) => setTimeout(listo, ms)),
 ): Promise<T> {
   let r = await correr();
 
-  if (r.error?.code && CODIGOS_REINTENTABLES.includes(r.error.code)) {
-    await dormir(esperaMs);
+  for (const espera of esperas) {
+    if (!r.error?.code || !CODIGOS_REINTENTABLES.includes(r.error.code)) break;
+    await dormir(espera);
     r = await correr();
   }
 
