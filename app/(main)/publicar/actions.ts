@@ -57,7 +57,9 @@ export async function publicar(
     return { error: "No pudimos guardar esa marca. Probá de nuevo." };
   }
 
-  const { error } = await supabase.from("paletas").insert({
+  // El id vuelve en la URL: la pantalla de Mis paletas abre sola la invitacion a
+  // promocionar sobre la paleta recien publicada.
+  const { data: nueva, error } = await supabase.from("paletas").insert({
     vendedor_id: user.id,
     marca_id: marcaId,
     modelo: datos.modelo,
@@ -69,7 +71,7 @@ export async function publicar(
     ciudad: datos.ciudad,
     descripcion: datos.descripcion,
     fotos: datos.fotos,
-  });
+  }).select("id").single();
 
   if (error) {
     return { error: "No pudimos publicar la paleta. Probá de nuevo." };
@@ -77,5 +79,5 @@ export async function publicar(
 
   revalidatePath("/");
   revalidatePath("/mis-publicaciones");
-  redirect("/mis-publicaciones?publicada=1");
+  redirect(`/mis-publicaciones?publicada=${nueva.id}`);
 }

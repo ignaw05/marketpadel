@@ -13,7 +13,7 @@ export default async function Page({
   return (
     <MyListings
       paletas={paletas}
-      publicada={publicada === "1"}
+      publicada={publicada}
       pago={pago}
       editada={editada === "1"}
     />
