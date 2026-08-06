@@ -21,6 +21,8 @@ export type Paleta = {
   visitas: number;
   promocionada?: boolean;
   estado_publicacion?: EstadoPublicacion;
+  /** Solo viene en las queries del dueño: la vista publica ya filtra por fecha. */
+  vence_at?: string;
 };
 
 export type Vendedor = {
@@ -122,6 +124,38 @@ export const promoVigente = (
   promos: { hasta: string }[] | null | undefined,
   ahora: Date = new Date(),
 ): boolean => (promos ?? []).some((p) => new Date(p.hasta) > ahora);
+
+// ---------------------------------------------------------------- vencimiento
+
+/** Lo que dura una publicacion en el feed. Renovar la estira otros tantos. */
+export const DURACION_DIAS = 30;
+
+/**
+ * Ventana en la que se puede renovar. Sin esto, renovar el dia 1 estiraria el
+ * aviso para siempre y el vencimiento no filtraria nada.
+ */
+export const RENOVAR_DESDE_DIAS = 7;
+
+const DIA_MS = 86400000;
+
+/** Dias que faltan para vencer, redondeados para arriba. Negativo si ya vencio. */
+export const diasParaVencer = (
+  vence_at: string | undefined,
+  ahora: Date = new Date(),
+): number | null =>
+  vence_at ? Math.ceil((new Date(vence_at).getTime() - ahora.getTime()) / DIA_MS) : null;
+
+export const vencida = (p: Pick<Paleta, "vence_at">, ahora: Date = new Date()): boolean =>
+  !!p.vence_at && new Date(p.vence_at) <= ahora;
+
+/** Se renueva sobre el final o cuando ya vencio, nunca el primer dia. */
+export const puedeRenovar = (
+  p: Pick<Paleta, "vence_at">,
+  ahora: Date = new Date(),
+): boolean => {
+  const dias = diasParaVencer(p.vence_at, ahora);
+  return dias !== null && dias <= RENOVAR_DESDE_DIAS;
+};
 
 /** Lado maximo que guardamos: la card mas grande del feed no pasa de 640px. */
 export const MAX_LADO = 1600;

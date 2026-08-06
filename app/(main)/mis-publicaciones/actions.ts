@@ -5,7 +5,15 @@ import { redirect } from "next/navigation";
 import { Preference } from "mercadopago";
 import { createClient } from "@/lib/supabase/server";
 import { BASE, armarReferencia, mp } from "@/lib/mercadopago";
-import { PLANES, promoVigente, type EstadoPublicacion } from "@/lib/paletas";
+import {
+  DURACION_DIAS,
+  PLANES,
+  RENOVAR_DESDE_DIAS,
+  promoVigente,
+  type EstadoPublicacion,
+} from "@/lib/paletas";
+
+const enDias = (dias: number) => new Date(Date.now() + dias * 86400000).toISOString();
 
 const ESTADOS_VALIDOS: EstadoPublicacion[] = ["activa", "pausada", "vendida"];
 
@@ -38,6 +46,30 @@ export async function cambiarEstado(fd: FormData) {
   revalidatePath("/");
 }
 
+/**
+ * Estira el vencimiento otros DURACION_DIAS. No acumula: vence a los 30 dias de
+ * hoy, no de la fecha vieja. El filtro por vence_at es la regla de la ventana de
+ * renovacion; sin el, renovar el primer dia estiraria el aviso para siempre.
+ */
+export async function renovar(fd: FormData) {
+  const id = String(fd.get("id") ?? "");
+  if (!id) return;
+
+  const { supabase, uid } = await sesion();
+
+  const { error } = await supabase
+    .from("paletas")
+    .update({ vence_at: enDias(DURACION_DIAS) })
+    .eq("id", id)
+    .eq("vendedor_id", uid)
+    .lt("vence_at", enDias(RENOVAR_DESDE_DIAS));
+
+  if (error) throw error;
+
+  revalidatePath("/mis-publicaciones");
+  revalidatePath("/");
+}
+
 export async function promocionar(fd: FormData) {
   const id = String(fd.get("id") ?? "");
   const plan = PLANES.find((p) => p.dias === Number(fd.get("dias")));
@@ -48,15 +80,17 @@ export async function promocionar(fd: FormData) {
 
   const { supabase, uid } = await sesion();
 
-  // Que sea propia, que este activa y que no tenga una promo corriendo. La RLS
-  // solo cubre lo primero: promocionar una pausada no la muestra en ningun lado,
-  // y promocionar dos veces seguidas seria pagar dos veces por lo mismo.
+  // Que sea propia, que este activa, que no este vencida y que no tenga una promo
+  // corriendo. La RLS solo cubre lo primero: promocionar una pausada o una vencida
+  // es pagar por algo que no se ve, y promocionar dos veces seguidas es pagar dos
+  // veces lo mismo.
   const { data: paleta } = await supabase
     .from("paletas")
     .select("id, modelo, promociones (hasta), marcas (nombre)")
     .eq("id", id)
     .eq("vendedor_id", uid)
     .eq("estado_publicacion", "activa")
+    .gt("vence_at", new Date().toISOString())
     .maybeSingle();
 
   if (!paleta || promoVigente(paleta.promociones)) return;

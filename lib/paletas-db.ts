@@ -95,7 +95,7 @@ export async function obtenerMiPaleta(id: string): Promise<Paleta | null> {
     const r = await supabase
       .from("paletas")
       .select(
-        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, marcas (nombre)",
+        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, vence_at, marcas (nombre)",
       )
       .eq("id", id)
       .eq("vendedor_id", user.id)
@@ -126,7 +126,7 @@ export async function listarMisPaletas(): Promise<Paleta[]> {
     supabase
       .from("paletas")
       .select(
-        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, marcas (nombre), promociones (hasta)",
+        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, vence_at, marcas (nombre), promociones (hasta)",
       )
       .eq("vendedor_id", user.id)
       .neq("estado_publicacion", "eliminada")
