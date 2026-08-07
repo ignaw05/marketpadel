@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowUpNarrowWide, CreditCard, Star, TrendingUp } from "lucide-react";
+import { ArrowUpNarrowWide, Clock, CreditCard, Star, TrendingUp } from "lucide-react";
 import { promocionar } from "@/app/(main)/mis-publicaciones/actions";
 import { PLANES, formatPrecio } from "@/lib/paletas";
 
@@ -10,7 +10,22 @@ import { PLANES, formatPrecio } from "@/lib/paletas";
 const LIMA = "#C7F751";
 const CLARO = "rgba(255,255,255,0.78)";
 
-function BotonConfirmar() {
+/**
+ * No hay fecha de fin real en el server: es urgencia visual que se renueva
+ * sola cada dia, contando lo que falta para la medianoche local.
+ */
+function faltaParaMedianoche(): string {
+  const ahora = new Date();
+  const medianoche = new Date(ahora);
+  medianoche.setHours(24, 0, 0, 0);
+  const restante = medianoche.getTime() - ahora.getTime();
+  const h = Math.floor(restante / 3_600_000);
+  const m = Math.floor((restante % 3_600_000) / 60_000);
+  const s = Math.floor((restante % 60_000) / 1000);
+  return [h, m, s].map((n) => String(n).padStart(2, "0")).join(":");
+}
+
+function BotonConfirmar({ precio }: { precio: number }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -19,7 +34,7 @@ function BotonConfirmar() {
       className="min-h-[44px] flex-1 rounded-[14px] py-2.5 text-[14px] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{ background: LIMA, color: "#14171A", fontWeight: 700, outlineColor: LIMA }}
     >
-      {pending ? "Redirigiendo…" : "Continuar al pago"}
+      {pending ? "Redirigiendo…" : `Continuar al pago · ${formatPrecio(precio)}`}
     </button>
   );
 }
@@ -41,10 +56,18 @@ export function PromocionarDialog({
   auto?: boolean;
 }) {
   const dialogo = useRef<HTMLDialogElement>(null);
+  const [dias, setDias] = useState(30);
+  const [cuenta, setCuenta] = useState(faltaParaMedianoche);
+  const plan = PLANES.find((p) => p.dias === dias)!;
 
   useEffect(() => {
     if (auto) dialogo.current?.showModal();
   }, [auto]);
+
+  useEffect(() => {
+    const t = setInterval(() => setCuenta(faltaParaMedianoche()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <>
@@ -62,14 +85,14 @@ export function PromocionarDialog({
         className="m-auto w-[min(400px,calc(100vw-2rem))] rounded-[14px] p-6 backdrop:bg-[rgba(20,23,26,0.6)]"
         style={{ background: "#0F5132", color: "#FFFFFF" }}
       >
-        <h2 id={`promo-${id}`} style={{ fontWeight: 700, fontSize: 18 }}>
+        <p className="text-[12px] uppercase" style={{ color: LIMA, fontWeight: 800, letterSpacing: "0.04em" }}>
+          Destacá tu publicación
+        </p>
+        <h2 id={`promo-${id}`} className="mt-1 text-[26px] leading-tight" style={{ fontWeight: 800 }}>
           {auto ? "Publicada. ¿La destacamos?" : "Promocionar publicación"}
         </h2>
-        <p className="mt-1.5 text-[14px]" style={{ color: CLARO, lineHeight: 1.5 }}>
-          Mientras dure la promoción, “{titulo}”:
-        </p>
 
-        <ul className="mt-3 space-y-2 text-[13px]" style={{ color: "#FFFFFF", lineHeight: 1.45 }}>
+        <ul className="mt-4 space-y-2.5 text-[13px]" style={{ color: "#FFFFFF", lineHeight: 1.45 }}>
           <li className="flex gap-2">
             <ArrowUpNarrowWide size={16} className="mt-px shrink-0" style={{ color: LIMA }} aria-hidden />
             Aparece primero en el feed y en todas las búsquedas, arriba del resto.
@@ -78,51 +101,89 @@ export function PromocionarDialog({
             <Star size={16} className="mt-px shrink-0" style={{ color: LIMA }} aria-hidden />
             Lleva el distintivo “Destacada” sobre la foto.
           </li>
+          <li className="flex gap-2">
+            <TrendingUp size={16} className="mt-px shrink-0" style={{ color: LIMA }} aria-hidden />
+            Multiplicá las consultas y vendé más rápido.
+          </li>
         </ul>
+
+        <div className="mt-4 flex items-center gap-3 rounded-[14px] px-4 py-3" style={{ background: LIMA }}>
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: "#14171A" }}
+          >
+            <Clock size={16} style={{ color: LIMA }} aria-hidden />
+          </span>
+          <p className="text-[13px]" style={{ color: "#14171A" }}>
+            <span className="block text-[12px] uppercase" style={{ fontWeight: 800, letterSpacing: "0.02em" }}>
+              Oferta de lanzamiento · 50% OFF
+            </span>
+            Termina en <span style={{ fontWeight: 800 }}>{cuenta}</span>
+          </p>
+        </div>
 
         <form action={promocionar}>
           <input type="hidden" name="id" value={id} />
 
-          <fieldset className="mt-5 space-y-2.5">
+          <fieldset className="mt-4 space-y-3">
             <legend className="sr-only">Duración de la promoción</legend>
 
-            {PLANES.map((plan) => (
+            {PLANES.map((p) => (
               <label
-                key={plan.dias}
-                className="flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.28)] px-3.5 py-2.5 has-[:checked]:border-[#C7F751] has-[:checked]:bg-[rgba(199,247,81,0.12)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+                key={p.dias}
+                className="relative flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-[16px] border border-[rgba(255,255,255,0.28)] px-4 py-3 has-[:checked]:border-[#C7F751] has-[:checked]:bg-[rgba(199,247,81,0.12)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
                 style={{ outlineColor: LIMA }}
               >
-                {/* ponytail: el resaltado sale de has-[:checked] en CSS, sin estado de React. */}
+                {p.dias === 30 && (
+                  <span
+                    className="absolute -top-2.5 left-4 rounded-full px-2 py-0.5 text-[10px] uppercase"
+                    style={{ background: LIMA, color: "#14171A", fontWeight: 800, letterSpacing: "0.02em" }}
+                  >
+                    Más popular
+                  </span>
+                )}
+                {/* ponytail: el resaltado sale de has-[:checked] en CSS; el estado en React
+                    es solo para reflejar el precio elegido en el boton de pago. */}
                 <input
                   type="radio"
                   name="dias"
-                  value={plan.dias}
-                  defaultChecked={plan.dias === 30}
+                  value={p.dias}
+                  checked={dias === p.dias}
+                  onChange={() => setDias(p.dias)}
                   className="peer sr-only"
                 />
-                {/* peer-checked solo alcanza a hermanos del input, por eso va aca y se hereda. */}
                 <span>
-                  <span className="block text-[15px]" style={{ fontWeight: 700 }}>
-                    {plan.dias} días
+                  <span className="block text-[16px]" style={{ fontWeight: 700 }}>
+                    {p.dias} días
                   </span>
                   <span className="block text-[12px]" style={{ color: CLARO }}>
-                    {formatPrecio(Math.round(plan.precio / plan.dias))} por día
+                    {formatPrecio(Math.round(p.precio / p.dias))} por día
                   </span>
                 </span>
-                <span className="text-[17px]" style={{ color: LIMA, fontWeight: 800 }}>
-                  {formatPrecio(plan.precio)}
+                <span className="flex flex-col items-end">
+                  <span className="flex items-center gap-1">
+                    <span className="text-[12px] line-through" style={{ color: CLARO }}>
+                      {formatPrecio(p.precioAntes)}
+                    </span>
+                    <span
+                      className="rounded-[4px] px-1 text-[10px]"
+                      style={{ background: LIMA, color: "#14171A", fontWeight: 800 }}
+                    >
+                      -50%
+                    </span>
+                  </span>
+                  <span className="text-[19px]" style={{ color: LIMA, fontWeight: 800 }}>
+                    {formatPrecio(p.precio)}
+                  </span>
                 </span>
               </label>
             ))}
           </fieldset>
 
           <p
-            className="mt-3 flex items-center gap-1.5 text-[12px]"
-            style={{ color: CLARO }}
+            className="mt-4 flex items-center gap-1.5 rounded-[10px] px-3 py-2.5 text-[12px]"
+            style={{ background: "rgba(255,255,255,0.08)", color: CLARO }}
           >
-            <TrendingUp size={13} aria-hidden /> Al terminar el período vuelve al orden normal.
-          </p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[12px]" style={{ color: CLARO }}>
             <CreditCard size={13} aria-hidden /> Te llevamos a MercadoPago para pagar.
           </p>
 
@@ -141,7 +202,7 @@ export function PromocionarDialog({
             >
               {auto ? "Ahora no" : "Cancelar"}
             </button>
-            <BotonConfirmar />
+            <BotonConfirmar precio={plan.precio} />
           </div>
         </form>
       </dialog>

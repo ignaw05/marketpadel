@@ -4,6 +4,8 @@ import {
   ESTADOS,
   topePrecio,
   promoVigente,
+  paginaActual,
+  POR_PAGINA,
   type Paleta,
   type Vendedor,
   type FiltrosFeed,
@@ -14,11 +16,23 @@ import { conReintento } from "@/lib/reintentar";
 const VISTA =
   "id, vendedor_id, marca, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, promocionada";
 
-export async function listarPaletas(f: FiltrosFeed): Promise<Paleta[]> {
+/**
+ * Una pagina del feed. Los filtros se aplican en la query, o sea contra el
+ * catalogo entero: paginar no los limita a lo que se ve en pantalla.
+ *
+ * `hayMas` sale de pedir un elemento de mas en vez de un count(*): saber si
+ * existe la pagina siguiente es todo lo que necesita la navegacion, y un
+ * count exacto sobre el catalogo entero cuesta un scan completo por request.
+ * ponytail: si algun dia hay que mostrar "pagina 3 de 47", ahi entra el count.
+ */
+export async function listarPaletas(
+  f: FiltrosFeed,
+): Promise<{ paletas: Paleta[]; hayMas: boolean }> {
   const supabase = await createClient();
   const busqueda = f.q ? limpiarBusqueda(f.q) : "";
   const tope = topePrecio(f.precioMax);
   const minEstado = ESTADOS.find((e) => e.label === f.estado);
+  const desde = (paginaActual(f.pagina) - 1) * POR_PAGINA;
 
   const data = await conReintento(() => {
     let query = supabase
@@ -26,7 +40,8 @@ export async function listarPaletas(f: FiltrosFeed): Promise<Paleta[]> {
       .select(VISTA)
       .order("promocionada", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(60); // ponytail: sin paginar hasta que el feed la pida
+      // range es inclusivo de los dos lados: esto pide POR_PAGINA + 1.
+      .range(desde, desde + POR_PAGINA);
 
     if (busqueda) {
       query = query.or(`modelo.ilike.%${busqueda}%,marca.ilike.%${busqueda}%`);
@@ -42,7 +57,8 @@ export async function listarPaletas(f: FiltrosFeed): Promise<Paleta[]> {
     return query;
   });
 
-  return (data ?? []) as unknown as Paleta[];
+  const filas = (data ?? []) as unknown as Paleta[];
+  return { paletas: filas.slice(0, POR_PAGINA), hayMas: filas.length > POR_PAGINA };
 }
 
 export async function obtenerPaleta(

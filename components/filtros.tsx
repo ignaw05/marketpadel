@@ -23,6 +23,9 @@ function useHref() {
     const p = new URLSearchParams(params.toString());
     if (valor) p.set(clave, valor);
     else p.delete(clave);
+    // Tocar un filtro vuelve a la primera pagina: el resultado es otro, y
+    // quedarse en la 5 del anterior cae casi siempre en una pagina vacia.
+    p.delete("pagina");
     const qs = p.toString();
     return qs ? `/?${qs}` : "/";
   };

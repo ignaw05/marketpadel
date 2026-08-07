@@ -3,7 +3,8 @@ import Link from "next/link";
 import { SearchX, PackageOpen, Plus } from "lucide-react";
 import { PaletaCard } from "../paleta-card";
 import { Filtros } from "../filtros";
-import type { Paleta, FiltrosFeed } from "@/lib/paletas";
+import { Paginacion } from "../paginacion";
+import { CLAVES_FILTRO, type Paleta, type FiltrosFeed } from "@/lib/paletas";
 
 function SinResultados() {
   return (
@@ -71,18 +72,24 @@ export function HomeScreen({
   marcas,
   ciudades,
   filtros,
+  pagina,
+  hayMas,
 }: {
   paletas: Paleta[];
   marcas: string[];
   ciudades: string[];
   filtros: FiltrosFeed;
+  pagina: number;
+  hayMas: boolean;
 }) {
   // Solo las claves que la query mira. Con Object.values(), cualquier param de
   // paso (?error=..., ?utm_source=...) haria creer que hay filtros puestos y
   // mostraria "no encontramos" en vez del vacio real.
-  const buscando = (
-    ["q", "marca", "forma", "provincia", "ciudad", "precioMax", "estado"] as const
-  ).some((k) => filtros[k]);
+  //
+  // `pagina > 1` cuenta como buscar: un ?pagina=999 a mano cae en una pagina
+  // vacia, y ahi corresponde "no encontramos" con la salida a /, no el
+  // "todavia no hay nada publicado", que seria mentira.
+  const buscando = CLAVES_FILTRO.some((k) => filtros[k]) || pagina > 1;
 
   return (
     <div className="mx-auto flex max-w-[1280px] flex-col px-4 py-5 md:flex-row md:gap-8 md:px-6">
@@ -100,11 +107,14 @@ export function HomeScreen({
             <TodavíaNoHayNada />
           )
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {paletas.map((p, i) => (
-              <PaletaCard key={p.id} paleta={p} priority={i < 4} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {paletas.map((p, i) => (
+                <PaletaCard key={p.id} paleta={p} priority={i < 4} />
+              ))}
+            </div>
+            <Paginacion filtros={filtros} pagina={pagina} hayMas={hayMas} />
+          </>
         )}
       </div>
     </div>

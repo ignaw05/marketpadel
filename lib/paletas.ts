@@ -40,6 +40,44 @@ export type FiltrosFeed = {
   ciudad?: string;
   precioMax?: string;
   estado?: string;
+  pagina?: string;
+};
+
+/** Las claves que filtran de verdad. `pagina` no filtra: pagina. */
+export const CLAVES_FILTRO = [
+  "q",
+  "marca",
+  "forma",
+  "provincia",
+  "ciudad",
+  "precioMax",
+  "estado",
+] as const satisfies readonly (keyof FiltrosFeed)[];
+
+// ---------------------------------------------------------------- paginacion
+
+/**
+ * Divisible por 2, 3 y 4: la grilla es de 2 columnas en mobile, 3 en md y 4 en
+ * xl, asi que la ultima fila nunca queda coja.
+ *
+ * Medido: con 60 por pagina el HTML del home pesaba 462 KB y el p50 a 50
+ * usuarios concurrentes se iba a 823 ms. El tamaño del resultado era el freno,
+ * no el de la tabla.
+ */
+export const POR_PAGINA = 24;
+
+/**
+ * Tope de paginas. Es una guarda, no una funcionalidad: `pagina` viene de la
+ * URL y se traduce en un OFFSET, asi que sin esto un ?pagina=99999999 le pide
+ * a Postgres que descarte cien millones de filas para devolver cero.
+ */
+const PAGINA_TOPE = 500;
+
+/** Pagina pedida en la URL. Cualquier cosa rara cae en 1. */
+export const paginaActual = (v?: string): number => {
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 1) return 1;
+  return Math.min(n, PAGINA_TOPE);
 };
 
 export const FORMAS: Forma[] = ["Diamante", "Lágrima", "Redonda"];
@@ -115,8 +153,8 @@ export const foto = (p: Pick<Paleta, "fotos">): string => p.fotos[0] ?? "";
 
 /** Lo que se le cobra al vendedor por aparecer primero en las busquedas. */
 export const PLANES = [
-  { dias: 15, precio: 2000 },
-  { dias: 30, precio: 3000 },
+  { dias: 15, precio: 2000, precioAntes: 4000 },
+  { dias: 30, precio: 3000, precioAntes: 6000 },
 ];
 
 /** Misma regla que el `exists` de la vista paletas_publicas: alcanza con una vigente. */

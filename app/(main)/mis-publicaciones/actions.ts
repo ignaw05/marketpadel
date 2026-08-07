@@ -86,7 +86,7 @@ export async function promocionar(fd: FormData) {
   // veces lo mismo.
   const { data: paleta } = await supabase
     .from("paletas")
-    .select("id, modelo, promociones (hasta), marcas (nombre)")
+    .select("id, promociones (hasta)")
     .eq("id", id)
     .eq("vendedor_id", uid)
     .eq("estado_publicacion", "activa")
@@ -95,16 +95,13 @@ export async function promocionar(fd: FormData) {
 
   if (!paleta || promoVigente(paleta.promociones)) return;
 
-  // El titulo que ve el comprador en MercadoPago sale de la base, no del form.
-  const marca = (paleta.marcas as unknown as { nombre: string } | null)?.nombre ?? "";
-
   // El precio sale de PLANES: del form llega la duracion y nada mas.
   const pref = await new Preference(mp()).create({
     body: {
       items: [
         {
           id,
-          title: `Promocionar ${marca} ${paleta.modelo} por ${plan.dias} días`,
+          title: `Paletita - Promocion ${plan.dias} dias`,
           quantity: 1,
           unit_price: plan.precio,
           currency_id: "ARS",
