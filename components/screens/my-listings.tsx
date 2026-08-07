@@ -4,6 +4,7 @@ import { ImageWithFallback } from "../image-with-fallback";
 import { AccionesPaleta } from "../acciones-paleta";
 import { PromocionarDialog } from "../promocionar-dialog";
 import { Renovar } from "../renovar";
+import { MarcarVendida } from "../marcar-vendida";
 import {
   Paleta,
   formatPrecio,
@@ -102,6 +103,7 @@ function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boo
               className="inline-flex items-center gap-1 rounded-full border border-[#0F5132] px-2.5 py-0.5 text-[12px] font-semibold text-[#0F5132] hover:bg-[rgba(15,81,50,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5132]"
             />
           ) : null}
+          {enJuego && <MarcarVendida id={paleta.id} titulo={titulo} />}
           <span className="flex items-center gap-1">
             <Eye size={12} aria-hidden /> {paleta.visitas.toLocaleString("es-AR")}
             <span className="sr-only">visitas</span>

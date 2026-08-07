@@ -100,14 +100,16 @@ export function AccionesPaleta({ paleta }: { paleta: Paleta }) {
               </form>
             )}
 
-            <form action={cambiarEstado} onSubmit={() => setMenu(false)}>
-              <input type="hidden" name="id" value={paleta.id} />
-              <input type="hidden" name="estado" value={vendida ? "activa" : "vendida"} />
-              <ItemSubmit>
-                <CheckCircle2 size={15} aria-hidden />
-                {vendida ? "Volver a publicar" : "Marcar como vendida"}
-              </ItemSubmit>
-            </form>
+            {vendida && (
+              <form action={cambiarEstado} onSubmit={() => setMenu(false)}>
+                <input type="hidden" name="id" value={paleta.id} />
+                <input type="hidden" name="estado" value="activa" />
+                <ItemSubmit>
+                  <CheckCircle2 size={15} aria-hidden />
+                  Volver a publicar
+                </ItemSubmit>
+              </form>
+            )}
 
             <button
               type="button"
