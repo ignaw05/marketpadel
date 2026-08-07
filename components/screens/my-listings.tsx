@@ -5,6 +5,7 @@ import { AccionesPaleta } from "../acciones-paleta";
 import { PromocionarDialog } from "../promocionar-dialog";
 import { Renovar } from "../renovar";
 import { MarcarVendida } from "../marcar-vendida";
+import { Metric } from "../metric";
 import {
   Paleta,
   formatPrecio,
@@ -13,22 +14,6 @@ import {
   puedeRenovar,
   vencida,
 } from "@/lib/paletas";
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      className="rounded-[14px] p-4"
-      style={{ background: "#FFFFFF", border: "1px solid #E6E4DF", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
-    >
-      <p className="text-[13px]" style={{ color: "#5B6470" }}>
-        {label}
-      </p>
-      <p className="mt-1 text-[24px]" style={{ color: "#0F5132", fontWeight: 800 }}>
-        {value}
-      </p>
-    </div>
-  );
-}
 
 const BADGE = {
   activa: { texto: "Activa", fondo: "rgba(15,81,50,0.1)", color: "#0F5132" },

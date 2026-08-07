@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { FiltrosFeed } from "@/lib/paletas";
 
 /**
  * Server Component: la pagina vive en la URL, asi que no hace falta estado ni
@@ -8,15 +7,17 @@ import type { FiltrosFeed } from "@/lib/paletas";
  * compartir con los filtros puestos.
  */
 
+type Filtros = Record<string, string | undefined>;
+
 /** Conserva los filtros y cambia solo la pagina. La 1 no lleva parametro. */
-function href(filtros: FiltrosFeed, pagina: number): string {
+function href(base: string, filtros: Filtros, pagina: number): string {
   const p = new URLSearchParams();
   for (const [clave, valor] of Object.entries(filtros)) {
     if (clave !== "pagina" && valor) p.set(clave, valor);
   }
   if (pagina > 1) p.set("pagina", String(pagina));
   const qs = p.toString();
-  return qs ? `/?${qs}` : "/";
+  return qs ? `${base}?${qs}` : base;
 }
 
 const ESTILO = {
@@ -31,10 +32,13 @@ export function Paginacion({
   filtros,
   pagina,
   hayMas,
+  base = "/",
 }: {
-  filtros: FiltrosFeed;
+  filtros: Filtros;
   pagina: number;
   hayMas: boolean;
+  /** Ruta que se pagina. El feed es "/"; el panel manda la suya. */
+  base?: string;
 }) {
   // Una sola pagina: no hay nada que navegar.
   if (pagina === 1 && !hayMas) return null;
@@ -46,7 +50,7 @@ export function Paginacion({
     >
       {pagina > 1 ? (
         <Link
-          href={href(filtros, pagina - 1)}
+          href={href(base, filtros, pagina - 1)}
           rel="prev"
           className="flex min-h-[44px] items-center gap-1 rounded-[14px] px-4 py-2.5 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
           style={ESTILO}
@@ -65,7 +69,7 @@ export function Paginacion({
 
       {hayMas ? (
         <Link
-          href={href(filtros, pagina + 1)}
+          href={href(base, filtros, pagina + 1)}
           rel="next"
           className="flex min-h-[44px] items-center gap-1 rounded-[14px] px-4 py-2.5 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
           style={ESTILO}
