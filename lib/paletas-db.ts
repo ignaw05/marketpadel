@@ -4,6 +4,7 @@ import {
   ESTADOS,
   topePrecio,
   promoVigente,
+  ordenActual,
   paginaActual,
   POR_PAGINA,
   type Paleta,
@@ -32,14 +33,24 @@ export async function listarPaletas(
   const busqueda = f.q ? limpiarBusqueda(f.q) : "";
   const tope = topePrecio(f.precioMax);
   const minEstado = ESTADOS.find((e) => e.label === f.estado);
+  const orden = ordenActual(f.orden);
   const desde = (paginaActual(f.pagina) - 1) * POR_PAGINA;
 
   const data = await conReintento(() => {
-    let query = supabase
-      .from("paletas_publicas")
-      .select(VISTA)
-      .order("promocionada", { ascending: false })
-      .order("created_at", { ascending: false })
+    let query = supabase.from("paletas_publicas").select(VISTA);
+
+    // Las promocionadas van primero solo en el orden por defecto. Si el usuario
+    // pidio precio o vistas, ese orden manda: una promocionada de $700.000
+    // arriba de todo en "menor precio" seria una lista rota.
+    if (orden.valor === "recientes") {
+      query = query.order("promocionada", { ascending: false });
+    }
+
+    query = query
+      .order(orden.columna, { ascending: orden.asc })
+      // Desempate estable: sin esto, dos paletas al mismo precio pueden
+      // repetirse o perderse al pasar de pagina.
+      .order("id")
       // range es inclusivo de los dos lados: esto pide POR_PAGINA + 1.
       .range(desde, desde + POR_PAGINA);
 

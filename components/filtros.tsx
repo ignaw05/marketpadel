@@ -10,8 +10,10 @@ import {
   ESTADOS,
   PRECIO_TOPE,
   PRECIO_PASO,
+  ORDENES,
   formatPrecio,
   topePrecio,
+  ordenActual,
 } from "@/lib/paletas";
 
 const CLAVES = ["marca", "forma", "precioMax", "provincia", "ciudad", "estado"];
@@ -115,6 +117,55 @@ function Dropdown({
 }
 
 /**
+ * ponytail: <select> nativo. En mobile abre el picker del sistema, y la lista de
+ * ordenes es corta y fija: no necesita el dropdown custom de los filtros.
+ */
+function Orden() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const href = useHref();
+  const valor = ordenActual(params.get("orden") ?? undefined).valor;
+
+  return (
+    <div className="w-full">
+      <label
+        htmlFor="orden"
+        className="text-[13px]"
+        style={{ color: "#14171A", fontWeight: 600 }}
+      >
+        Ordenar por
+      </label>
+      <select
+        id="orden"
+        name="orden"
+        value={valor}
+        onChange={(e) =>
+          // El default no ensucia la URL: se va del querystring.
+          router.replace(
+            href("orden", e.target.value === ORDENES[0].valor ? null : e.target.value),
+            { scroll: false },
+          )
+        }
+        className="mt-1 min-h-[44px] w-full rounded-[12px] px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E6E4DF",
+          color: "#14171A",
+          fontWeight: 600,
+          outlineColor: "#0F5132",
+        }}
+      >
+        {ORDENES.map((o) => (
+          <option key={o.valor} value={o.valor}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/**
  * ponytail: <input type="range"> nativo con accent-color, sin libreria de slider.
  * Un solo pulgar = precio maximo; el minimo es siempre 0. Si hace falta rango
  * min-max, ahi si entra un componente de dos pulgares.
@@ -162,10 +213,17 @@ function PrecioSlider() {
 export function Filtros({ marcas, ciudades }: { marcas: string[]; ciudades: string[] }) {
   const params = useSearchParams();
   const activos = CLAVES.filter((k) => params.get(k)).length;
-  const q = params.get("q");
+
+  // Limpiar filtros no toca la busqueda ni el orden: no son filtros.
+  const limpio = new URLSearchParams();
+  for (const k of ["q", "orden"]) {
+    const v = params.get(k);
+    if (v) limpio.set(k, v);
+  }
 
   return (
     <div className="mb-5 flex flex-wrap items-center gap-2 pb-1 md:mb-0 md:flex-col md:items-stretch md:gap-3">
+      <Orden />
       <Dropdown etiqueta="Marca" clave="marca" opciones={marcas} />
       <Dropdown etiqueta="Forma" clave="forma" opciones={[...FORMAS]} />
       <Dropdown etiqueta="Provincia" clave="provincia" opciones={[...PROVINCIAS]} />
@@ -176,7 +234,7 @@ export function Filtros({ marcas, ciudades }: { marcas: string[]; ciudades: stri
 
       {activos > 0 && (
         <Link
-          href={q ? `/?q=${encodeURIComponent(q)}` : "/"}
+          href={limpio.toString() ? `/?${limpio}` : "/"}
           className="flex min-h-[44px] items-center gap-1 rounded-full px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 md:justify-center"
           style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#0F5132" }}
         >

@@ -40,6 +40,7 @@ export type FiltrosFeed = {
   ciudad?: string;
   precioMax?: string;
   estado?: string;
+  orden?: string;
   pagina?: string;
 };
 
@@ -53,6 +54,27 @@ export const CLAVES_FILTRO = [
   "precioMax",
   "estado",
 ] as const satisfies readonly (keyof FiltrosFeed)[];
+
+// ------------------------------------------------------------------- orden
+
+/**
+ * Orden del feed. El primero es el default.
+ *
+ * `columna` es una columna real de paletas_publicas y el valor de la URL nunca
+ * llega crudo a la query: se resuelve contra esta lista.
+ */
+export const ORDENES = [
+  { valor: "recientes", label: "Más recientes", columna: "created_at", asc: false },
+  { valor: "precio-asc", label: "Menor precio", columna: "precio", asc: true },
+  { valor: "precio-desc", label: "Mayor precio", columna: "precio", asc: false },
+  { valor: "vistas", label: "Más vistas", columna: "visitas", asc: false },
+] as const;
+
+export type Orden = (typeof ORDENES)[number];
+
+/** Orden pedido en la URL. Cualquier cosa rara cae en el default. */
+export const ordenActual = (v?: string): Orden =>
+  ORDENES.find((o) => o.valor === v) ?? ORDENES[0];
 
 // ---------------------------------------------------------------- paginacion
 
