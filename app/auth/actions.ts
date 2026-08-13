@@ -6,9 +6,12 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
   validarAuth,
+  validarPasswordNueva,
+  errorEmail,
   armarWhatsapp,
   destinoSeguro,
   type CampoAuth,
+  type CampoPassword,
   type Errores,
 } from "@/lib/validar";
 
@@ -21,16 +24,23 @@ export type AuthState = {
   aviso?: string;
 };
 
+export type NuevaPasswordState = {
+  error?: string;
+  campos?: Errores<CampoPassword>;
+};
+
 const texto = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 
 /** A dónde vuelve el link del mail. Sale del request, así anda en dev y en prod. */
-async function urlDeConfirmacion() {
+async function origen() {
   const h = await headers();
-  const origen =
+  return (
     h.get("origin") ??
-    (h.get("host") ? `https://${h.get("host")}` : "http://localhost:3000");
-  return `${origen}/auth/confirmar`;
+    (h.get("host") ? `https://${h.get("host")}` : "http://localhost:3000")
+  );
 }
+
+const urlDeConfirmacion = async () => `${await origen()}/auth/confirmar`;
 
 export async function autenticar(
   _prev: AuthState,
@@ -131,6 +141,58 @@ export async function reenviarConfirmacion(
   }
 
   return { pendiente: email, aviso: "Listo, te lo mandamos de nuevo." };
+}
+
+export async function pedirReset(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = texto(formData, "email");
+  const error = errorEmail(email);
+  if (error) return { campos: { email: error }, valores: { email } };
+
+  const supabase = await createClient();
+  const { error: falla } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${await origen()}/auth/confirmar`,
+  });
+
+  if (falla?.code === "over_email_send_rate_limit") {
+    return {
+      valores: { email },
+      error: "Hay un límite de mails por hora. Esperá un rato y probá de nuevo.",
+    };
+  }
+
+  // A propósito no distinguimos si el mail existe: si no, sabrían qué cuentas hay.
+  return {
+    valores: { email },
+    aviso: `Si hay una cuenta con ${email}, te mandamos el link para restablecerla.`,
+  };
+}
+
+/** Segundo paso del reset: el link ya dejó una sesión abierta. */
+export async function definirPassword(
+  _prev: NuevaPasswordState,
+  formData: FormData,
+): Promise<NuevaPasswordState> {
+  const datos = {
+    nueva: String(formData.get("nueva") ?? ""),
+    repetir: String(formData.get("repetir") ?? ""),
+  };
+
+  const campos = validarPasswordNueva(datos);
+  if (Object.keys(campos).length) return { campos };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: datos.nueva });
+  if (error) {
+    return {
+      error: "No pudimos cambiarla. Puede que el link haya vencido: pedí uno nuevo.",
+    };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function cerrarSesion() {

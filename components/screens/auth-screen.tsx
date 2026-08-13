@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { MailCheck } from "lucide-react";
+import { KeyRound, MailCheck } from "lucide-react";
 import { Logo } from "../logo";
 import { ImageWithFallback } from "../image-with-fallback";
 import {
@@ -18,7 +18,10 @@ import {
 import {
   autenticar,
   reenviarConfirmacion,
+  pedirReset,
+  definirPassword,
   type AuthState,
+  type NuevaPasswordState,
 } from "@/app/auth/actions";
 import { PREFIJO_WHATSAPP } from "@/lib/validar";
 
@@ -120,6 +123,130 @@ function Marco({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Mismo look que Submit variante="borde", pero no manda el form. */
+function Volver({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="min-h-[44px] w-full rounded-[14px] py-3 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid #E6E4DF",
+        color: "#14171A",
+        fontWeight: 600,
+        outlineColor: VERDE,
+      }}
+    >
+      Volver
+    </button>
+  );
+}
+
+/** Cabecera de las pantallas de un solo paso: icono, titulo y bajada. */
+function Encabezado({
+  icono: Icono,
+  titulo,
+  children,
+}: {
+  icono: typeof MailCheck;
+  titulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <div
+        className="mx-auto flex h-16 w-16 items-center justify-center rounded-full"
+        style={{ background: "rgba(15,81,50,0.08)" }}
+      >
+        <Icono size={30} style={{ color: VERDE }} aria-hidden />
+      </div>
+      <h1 className="mt-5" style={{ color: "#14171A", fontWeight: 700, fontSize: 22 }}>
+        {titulo}
+      </h1>
+      <p className="mt-2 text-[15px]" style={{ color: "#5B6470", lineHeight: 1.6 }}>
+        {children}
+      </p>
+    </>
+  );
+}
+
+function Olvide({ email, onVolver }: { email?: string; onVolver: () => void }) {
+  const [state, formAction] = useActionState<AuthState, FormData>(pedirReset, {});
+
+  return (
+    <div className="text-center">
+      <Encabezado icono={KeyRound} titulo="Restablecer contraseña">
+        Escribí tu email y te mandamos un link para elegir una nueva.
+      </Encabezado>
+
+      <div className="mt-6 space-y-3 text-left">
+        {state.error && <Aviso tipo="error">{state.error}</Aviso>}
+        {state.aviso && !state.error && <Aviso tipo="ok">{state.aviso}</Aviso>}
+
+        <form action={formAction} className="space-y-3" noValidate>
+          <Field
+            id="reset-email"
+            name="email"
+            label="Email"
+            type="email"
+            placeholder="vos@email.com"
+            autoComplete="email"
+            defaultValue={state.valores?.email ?? email}
+            error={state.campos?.email}
+          />
+          <Submit cargando="Enviando…">Enviarme el link</Submit>
+        </form>
+
+        <Volver onClick={onVolver} />
+      </div>
+    </div>
+  );
+}
+
+/** Se llega desde el link del mail, con la sesión ya abierta. */
+export function NuevaPasswordScreen() {
+  const [state, formAction] = useActionState<NuevaPasswordState, FormData>(
+    definirPassword,
+    {},
+  );
+  const e = state.campos ?? {};
+
+  return (
+    <Marco>
+      <div className="text-center">
+        <Encabezado icono={KeyRound} titulo="Elegí tu nueva contraseña">
+          Después de guardarla entrás derecho a Paletita.
+        </Encabezado>
+
+        <form action={formAction} className="mt-6 space-y-4 text-left" noValidate>
+          {state.error && <Aviso tipo="error">{state.error}</Aviso>}
+
+          <Field
+            name="nueva"
+            label="Contraseña nueva"
+            type="password"
+            placeholder="••••••••"
+            autoComplete="new-password"
+            error={e.nueva}
+            ayuda="Mínimo 8 caracteres."
+          />
+          <Field
+            name="repetir"
+            label="Repetir la contraseña"
+            type="password"
+            placeholder="••••••••"
+            autoComplete="new-password"
+            error={e.repetir}
+          />
+
+          <Submit cargando="Guardando…">Guardar</Submit>
+        </form>
+      </div>
+    </Marco>
+  );
+}
+
 function EsperandoConfirmacion({
   email,
   avisoInicial,
@@ -136,20 +263,10 @@ function EsperandoConfirmacion({
 
   return (
     <div className="text-center">
-      <div
-        className="mx-auto flex h-16 w-16 items-center justify-center rounded-full"
-        style={{ background: "rgba(15,81,50,0.08)" }}
-      >
-        <MailCheck size={30} style={{ color: VERDE }} aria-hidden />
-      </div>
-
-      <h1 className="mt-5" style={{ color: "#14171A", fontWeight: 700, fontSize: 22 }}>
-        Revisá tu mail
-      </h1>
-      <p className="mt-2 text-[15px]" style={{ color: "#5B6470", lineHeight: 1.6 }}>
+      <Encabezado icono={MailCheck} titulo="Revisá tu mail">
         Te mandamos un link a <strong style={{ color: "#14171A" }}>{email}</strong> para
         confirmar la cuenta. Abrilo y entrás derecho a Paletita.
-      </p>
+      </Encabezado>
       <p className="mt-3 text-[13px]" style={{ color: "#5B6470" }}>
         Si no lo ves, fijate en spam o en promociones. El link vence en una hora.
       </p>
@@ -163,20 +280,7 @@ function EsperandoConfirmacion({
           <Submit cargando="Reenviando…">Reenviar el mail</Submit>
         </form>
 
-        <button
-          type="button"
-          onClick={onVolver}
-          className="min-h-[44px] w-full rounded-[14px] py-3 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{
-            background: "#FFFFFF",
-            border: "1px solid #E6E4DF",
-            color: "#14171A",
-            fontWeight: 600,
-            outlineColor: VERDE,
-          }}
-        >
-          Volver
-        </button>
+        <Volver onClick={onVolver} />
       </div>
     </div>
   );
@@ -192,10 +296,19 @@ export function AuthScreen({
   const [tab, setTab] = useState<"login" | "registro">("login");
   const [state, formAction] = useActionState<AuthState, FormData>(autenticar, {});
   const [descartado, setDescartado] = useState(false);
+  const [olvide, setOlvide] = useState(false);
 
   const v = state.valores ?? {};
   const e = state.campos ?? {};
   const error = state.error ?? (state.campos || state.pendiente ? undefined : errorInicial);
+
+  if (olvide) {
+    return (
+      <Marco>
+        <Olvide email={v.email} onVolver={() => setOlvide(false)} />
+      </Marco>
+    );
+  }
 
   if (state.pendiente && !descartado) {
     return (
@@ -292,6 +405,19 @@ export function AuthScreen({
           autoComplete={tab === "login" ? "current-password" : "new-password"}
           error={e.password}
         />
+
+        {tab === "login" && (
+          <p className="text-right">
+            <button
+              type="button"
+              onClick={() => setOlvide(true)}
+              className="min-h-[44px] rounded text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
+              style={{ color: VERDE, fontWeight: 600, outlineColor: VERDE }}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </p>
+        )}
 
         <Submit cargando={tab === "login" ? "Ingresando…" : "Creando cuenta…"}>
           {tab === "login" ? "Ingresar" : "Crear mi cuenta"}

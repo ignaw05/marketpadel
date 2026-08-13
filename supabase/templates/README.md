@@ -1,5 +1,15 @@
 # Plantillas de mail
 
+## Qué mail manda la app
+
+Solo uno: **restablecer contraseña** (`recuperacion.html`). El registro entra
+derecho, sin confirmar nada — `enable_confirmations = false` en `config.toml`, y
+en el dashboard remoto, Authentication → Sign In / Providers → Email →
+*Confirm email* apagado.
+
+`confirmacion.html` queda para las cuentas viejas, creadas cuando la
+confirmación estaba prendida.
+
 ## Sí, se puede editar la plantilla — pero hay que editarla
 
 `confirmacion.html` no es cosmético: la app **no funciona con la plantilla que
@@ -20,9 +30,11 @@ llega al Route Handler, que lo canjea con `verifyOtp`.
 
 **Proyecto remoto:** hay que pegarla a mano.
 
-1. Dashboard → Authentication → Emails → *Confirm signup*
-2. Asunto: `Confirmá tu cuenta en Paletita`
-3. Pegar el contenido de `confirmacion.html` en el body
+1. Dashboard → Authentication → Emails → *Reset password*
+2. Asunto: `Restablecé tu contraseña de Paletita`
+3. Pegar el contenido de `recuperacion.html` en el body
+   (mismo trámite en *Confirm signup* con `confirmacion.html` si algún día se
+   vuelve a prender la confirmación)
 4. Authentication → URL Configuration → *Redirect URLs*: agregar
    `http://localhost:3000/auth/confirmar` y la URL de producción cuando exista.
    Sin esto Supabase ignora el `emailRedirectTo` y usa el Site URL.
@@ -39,8 +51,8 @@ PATCH https://api.supabase.com/v1/projects/{ref}/config/auth
 
 ## El SMTP por defecto no sirve para usuarios reales
 
-Dos límites del mailer que trae Supabase, y son la razón por la que el registro
-tira `over_email_send_rate_limit`:
+Dos límites del mailer que trae Supabase, y son la razón por la que restablecer
+la contraseña tira `over_email_send_rate_limit`:
 
 - **Solo manda a miembros de tu organización.** Un usuario cualquiera que se
   registre no recibe nada.

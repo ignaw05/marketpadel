@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
     // redirect() tira NEXT_REDIRECT, va afuera del if de error.
-    if (!error) redirect("/?confirmada=1");
+    // En recovery el canje deja la sesion abierta: alcanza para elegir la nueva.
+    if (!error) redirect(type === "recovery" ? "/auth/nueva" : "/?confirmada=1");
   }
 
   redirect("/auth?error=link");

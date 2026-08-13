@@ -5,6 +5,7 @@ import {
   validarAuth,
   validarPerfil,
   validarPassword,
+  validarPasswordNueva,
   limpiarBusqueda,
   armarWhatsapp,
   destinoSeguro,
@@ -180,6 +181,15 @@ test("la contraseña nueva tiene que ser larga, distinta y estar repetida igual"
       .nueva,
   ).toBeDefined();
   expect(validarPassword({ ...ok, repetir: "otraCosa" }).repetir).toBeDefined();
+});
+
+test("restablecer no pide la contraseña actual, pero si el largo y la repeticion", () => {
+  const ok = { nueva: "claveNueva1", repetir: "claveNueva1" };
+  expect(validarPasswordNueva(ok)).toEqual({});
+
+  expect(validarPasswordNueva({ nueva: "", repetir: "" }).nueva).toBeDefined();
+  expect(validarPasswordNueva({ nueva: "corta", repetir: "corta" }).nueva).toBeDefined();
+  expect(validarPasswordNueva({ ...ok, repetir: "otraCosa" }).repetir).toBeDefined();
 });
 
 // --- busqueda -------------------------------------------------------------
