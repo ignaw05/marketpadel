@@ -54,6 +54,23 @@ test("sigue reintentando despues del segundo intento", async () => {
   expect(veces).toBe(3);
 });
 
+// El caso que se escapaba con tres esperas: volver a la app con la pestaña
+// cerrada hace rato, el token vencido y renovado por el proxy en esa request.
+test("aguanta un token renovado que tarda mas de tres intentos en entrar", async () => {
+  let veces = 0;
+  const data = await conReintento(
+    async () => {
+      veces++;
+      return veces < 5 ? { data: null, error: { code: "PGRST303" } } : { data: "ok", error: null };
+    },
+    ESPERAS_MS,
+    sinDormir,
+  );
+
+  expect(data).toBe("ok");
+  expect(veces).toBe(5);
+});
+
 test("no reintenta un error que no se arregla solo", async () => {
   // Una tabla que no existe no mejora esperando: tiene que fallar ya.
   let veces = 0;
