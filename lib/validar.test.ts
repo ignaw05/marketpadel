@@ -247,7 +247,8 @@ test("una promocion vencida no destaca la publicacion", () => {
 });
 
 test("los planes son 15 dias a $2000 y 30 a $3000", () => {
-  expect(PLANES).toEqual([
+  // Solo dias y precio: `precioAntes` es la tachada del dialogo, no lo que se cobra.
+  expect(PLANES.map(({ dias, precio }) => ({ dias, precio }))).toEqual([
     { dias: 15, precio: 2000 },
     { dias: 30, precio: 3000 },
   ]);
