@@ -17,8 +17,16 @@
 
 export const CODIGOS_REINTENTABLES = ["PGRST303"];
 
-/** Aguanta un reloj hasta ~3s atrasado sin llegar a error.tsx. */
-export const ESPERAS_MS = [300, 1000, 2000];
+/**
+ * Aguanta un reloj hasta ~6s atrasado sin llegar a error.tsx.
+ *
+ * Empezo en 3,3s por el desfasaje medido de 1 a 2s, y aun asi se escapo un
+ * caso real: volver a la app con la pestaña cerrada hace mucho, o sea con el
+ * token vencido, renovado por el proxy y estrenado en la misma request.
+ * Esperar unos segundos de mas en ese caso es mejor que la pantalla de error,
+ * y solo lo paga PGRST303: cualquier otro error corta en el primer intento.
+ */
+export const ESPERAS_MS = [300, 1000, 2000, 3000];
 
 type Respuesta<T> = { data: T; error: { code?: string } | null };
 
@@ -37,6 +45,11 @@ export async function conReintento<T>(
     r = await correr();
   }
 
-  if (r.error) throw r.error;
+  // En produccion el error real no llega al browser: Next manda solo un digest.
+  // Este log es lo unico que queda del codigo de PostgREST en los runtime logs.
+  if (r.error) {
+    console.error("[supabase]", r.error);
+    throw r.error;
+  }
   return r.data;
 }
