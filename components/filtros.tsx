@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, X } from "lucide-react";
+import { ArrowUpDown, Check, ChevronDown, X } from "lucide-react";
 import {
   FORMAS,
   PROVINCIAS,
@@ -117,50 +117,78 @@ function Dropdown({
 }
 
 /**
- * ponytail: <select> nativo. En mobile abre el picker del sistema, y la lista de
- * ordenes es corta y fija: no necesita el dropdown custom de los filtros.
+ * Barra verde con el orden puesto, aparte de los filtros: ordenar no es filtrar
+ * y siempre hay uno activo, asi que el control muestra el valor en vez de una
+ * etiqueta generica.
  */
 function Orden() {
+  const [abierto, setAbierto] = useState(false);
   const params = useSearchParams();
-  const router = useRouter();
   const href = useHref();
-  const valor = ordenActual(params.get("orden") ?? undefined).valor;
+  const actual = ordenActual(params.get("orden") ?? undefined);
 
   return (
-    <div className="w-full">
-      <label
-        htmlFor="orden"
-        className="text-[13px]"
-        style={{ color: "#14171A", fontWeight: 600 }}
+    <div className="relative w-full" onKeyDown={(e) => e.key === "Escape" && setAbierto(false)}>
+      <button
+        type="button"
+        onClick={() => setAbierto((o) => !o)}
+        aria-expanded={abierto}
+        className="flex min-h-[52px] w-full items-center gap-2.5 rounded-[12px] px-3.5 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{ background: "#0F5132", color: "#FFFFFF", outlineColor: "#0F5132" }}
       >
-        Ordenar por
-      </label>
-      <select
-        id="orden"
-        name="orden"
-        value={valor}
-        onChange={(e) =>
-          // El default no ensucia la URL: se va del querystring.
-          router.replace(
-            href("orden", e.target.value === ORDENES[0].valor ? null : e.target.value),
-            { scroll: false },
-          )
-        }
-        className="mt-1 min-h-[44px] w-full rounded-[12px] px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{
-          background: "#FFFFFF",
-          border: "1px solid #E6E4DF",
-          color: "#14171A",
-          fontWeight: 600,
-          outlineColor: "#0F5132",
-        }}
-      >
-        {ORDENES.map((o) => (
-          <option key={o.valor} value={o.valor}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+        <ArrowUpDown size={18} aria-hidden style={{ flexShrink: 0 }} />
+        <span className="min-w-0 flex-1">
+          <span
+            className="block text-[10px] uppercase tracking-[0.08em]"
+            style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}
+          >
+            Ordenado por
+          </span>
+          <span className="block truncate text-[15px]" style={{ fontWeight: 700 }}>
+            {actual.label}
+          </span>
+        </span>
+        <ChevronDown size={16} aria-hidden style={{ flexShrink: 0 }} />
+      </button>
+
+      {abierto && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={() => setAbierto(false)}
+          >
+            <span className="sr-only">Cerrar el menú</span>
+          </button>
+          <div
+            className="absolute left-0 top-full z-20 mt-2 w-full rounded-[14px] p-1.5"
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E6E4DF",
+              boxShadow: "0 12px 28px rgba(0,0,0,0.10)",
+            }}
+          >
+            {ORDENES.map((o) => (
+              <Link
+                key={o.valor}
+                // El default no ensucia la URL: se va del querystring.
+                href={href("orden", o.valor === ORDENES[0].valor ? null : o.valor)}
+                scroll={false}
+                onClick={() => setAbierto(false)}
+                aria-current={actual.valor === o.valor ? "true" : undefined}
+                className="flex min-h-[44px] items-center justify-between gap-2 rounded-[10px] px-3 py-2.5 text-[13px] hover:bg-[#F2F1ED]"
+                style={{
+                  color: actual.valor === o.valor ? "#0F5132" : "#14171A",
+                  fontWeight: actual.valor === o.valor ? 700 : 400,
+                }}
+              >
+                {o.label}
+                {actual.valor === o.valor && <Check size={16} aria-hidden />}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
