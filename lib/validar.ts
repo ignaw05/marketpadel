@@ -85,6 +85,11 @@ export const PREFIJO_WHATSAPP = "+54 9";
 export const armarWhatsapp = (prefijo: string, numero: string) =>
   `${prefijo.trim()} ${numero.trim()}`.trim();
 
+export function errorEmail(email: string): string | undefined {
+  if (!email) return "Escribí tu email.";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return "Ese email no parece válido.";
+}
+
 export function validarAuth(
   d: {
     email: string;
@@ -98,9 +103,8 @@ export function validarAuth(
 ): Errores<CampoAuth> {
   const e: Errores<CampoAuth> = {};
 
-  if (!d.email) e.email = "Escribí tu email.";
-  else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email))
-    e.email = "Ese email no parece válido.";
+  const email = errorEmail(d.email);
+  if (email) e.email = email;
 
   if (!d.password) e.password = "Escribí tu contraseña.";
   else if (modo === "registro" && d.password.length < 8)
@@ -156,17 +160,26 @@ export function validarPerfil(d: {
   return e;
 }
 
+/** Restablecer por mail: el link ya probó quién es, no hay contraseña actual. */
+export function validarPasswordNueva(d: {
+  nueva: string;
+  repetir: string;
+}): Errores<CampoPassword> {
+  const e: Errores<CampoPassword> = {};
+  if (!d.nueva) e.nueva = "Escribí la contraseña nueva.";
+  else if (d.nueva.length < 8) e.nueva = "Mínimo 8 caracteres.";
+  else if (d.repetir !== d.nueva) e.repetir = "Las contraseñas no coinciden.";
+  return e;
+}
+
 export function validarPassword(d: {
   actual: string;
   nueva: string;
   repetir: string;
 }): Errores<CampoPassword> {
-  const e: Errores<CampoPassword> = {};
+  const e = validarPasswordNueva(d);
   if (!d.actual) e.actual = "Escribí tu contraseña actual.";
-  if (!d.nueva) e.nueva = "Escribí la contraseña nueva.";
-  else if (d.nueva.length < 8) e.nueva = "Mínimo 8 caracteres.";
-  else if (d.nueva === d.actual) e.nueva = "La nueva tiene que ser distinta.";
-  else if (d.repetir !== d.nueva) e.repetir = "Las contraseñas no coinciden.";
+  if (!e.nueva && d.nueva === d.actual) e.nueva = "La nueva tiene que ser distinta.";
   return e;
 }
 

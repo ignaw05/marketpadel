@@ -37,7 +37,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname.startsWith("/auth")) {
+  // /auth/nueva queda afuera: al reset se llega justo con la sesion que abrio el
+  // link del mail, y si no la salteamos el proxy lo rebota antes de elegir la clave.
+  if (user && pathname.startsWith("/auth") && pathname !== "/auth/nueva") {
     const url = request.nextUrl.clone();
     url.pathname = destinoSeguro(request.nextUrl.searchParams.get("next"));
     url.search = "";
