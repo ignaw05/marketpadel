@@ -27,7 +27,7 @@ export default async function AdminLayout({
         <Link
           href="/"
           className="flex min-h-[44px] items-center gap-1.5 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ color: "#5B6470", outlineColor: "#0F5132" }}
+          style={{ color: "#5B6470", outlineColor: "#057305" }}
         >
           <ArrowLeft size={16} aria-hidden /> Volver al sitio
         </Link>

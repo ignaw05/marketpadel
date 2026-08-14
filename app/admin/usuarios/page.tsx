@@ -44,7 +44,7 @@ function Fila({ u }: { u: UsuarioAdmin }) {
           <Link
             href={`/admin/publicaciones?vendedor=${u.id}`}
             className="focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ color: "#0F5132", fontWeight: 600, textDecoration: "underline", outlineColor: "#0F5132" }}
+            style={{ color: "#057305", fontWeight: 600, textDecoration: "underline", outlineColor: "#057305" }}
           >
             {u.paletas.toLocaleString("es-AR")}{" "}
             {u.paletas === 1 ? "publicación" : "publicaciones"}
@@ -103,13 +103,13 @@ export default async function Page({
             type="search"
             defaultValue={f.q ?? ""}
             className="mt-1 min-h-[44px] w-full rounded-[14px] px-3 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ background: "#FFFFFF", border: "1px solid #E6E4DF", color: "#14171A", outlineColor: "#0F5132" }}
+            style={{ background: "#FFFFFF", border: "1px solid #E6E4DF", color: "#14171A", outlineColor: "#057305" }}
           />
         </div>
         <button
           type="submit"
           className="min-h-[44px] rounded-[14px] px-4 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+          style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
         >
           Buscar
         </button>
@@ -124,7 +124,7 @@ export default async function Page({
             className="flex h-16 w-16 items-center justify-center rounded-full"
             style={{ background: "#F2F1ED" }}
           >
-            <UserX size={28} style={{ color: "#0F5132" }} aria-hidden />
+            <UserX size={28} style={{ color: "#057305" }} aria-hidden />
           </div>
           <p className="mt-4 text-[16px]" style={{ color: "#14171A", fontWeight: 600 }}>
             No encontramos usuarios

@@ -3,7 +3,7 @@
 import { useFormStatus } from "react-dom";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
-export const VERDE = "#0F5132";
+export const VERDE = "#057305";
 export const ROJO = "#D4183D";
 
 /** El asterisco es decorativo: el dato real lo da `required` en el input. */
@@ -28,7 +28,7 @@ export function Aviso({
       role={error ? "alert" : "status"}
       className="flex items-start gap-2 rounded-[14px] p-3 text-[13px]"
       style={{
-        background: error ? "rgba(212,24,61,0.08)" : "rgba(15,81,50,0.08)",
+        background: error ? "rgba(212,24,61,0.08)" : "rgba(5,115,5,0.08)",
         color: error ? "#A31232" : VERDE,
       }}
     >

@@ -64,7 +64,7 @@ function Buscador({ id, className }: { id: string; className?: string }) {
             background: "#FAFAF8",
             border: "1px solid #E6E4DF",
             color: "#14171A",
-            outlineColor: "#0F5132",
+            outlineColor: "#057305",
           }}
         />
       </div>
@@ -79,7 +79,7 @@ function VolverAlMercado({ className }: { className?: string }) {
       <Link
         href="/"
         className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+        style={{ color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
       >
         <ArrowLeft size={18} aria-hidden /> Volver al mercado
       </Link>
@@ -108,7 +108,7 @@ export function Header({
       {/* ponytail: franja propia arriba de todo. En el row principal el link de
           Instagram compite por ancho con Publicar/Mis paletas/avatar y en 320px
           los empuja fuera de pantalla. */}
-      <div style={{ background: "#0F5132" }}>
+      <div style={{ background: "#057305" }}>
         <div className="mx-auto flex max-w-[1280px] justify-end px-4 md:px-6">
           <a
             href="https://instagram.com/paletita.ar"
@@ -128,7 +128,7 @@ export function Header({
         <Link
           href="/"
           className="shrink-0 rounded focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ outlineColor: "#0F5132" }}
+          style={{ outlineColor: "#057305" }}
         >
           <Logo />
         </Link>
@@ -144,7 +144,7 @@ export function Header({
           <Link
             href="/publicar"
             className="flex h-11 min-h-[44px] w-11 items-center justify-center gap-1.5 rounded-full text-[14px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto sm:rounded-[14px] sm:px-3.5"
-            style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+            style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
           >
             <Plus size={18} aria-hidden />
             <span className="hidden sm:inline">Publicar</span>
@@ -158,10 +158,10 @@ export function Header({
                 aria-current={enMisPaletas ? "page" : undefined}
                 className="flex h-11 min-h-[44px] w-11 items-center justify-center gap-1.5 rounded-full text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto sm:rounded-[14px] sm:px-3"
                 style={{
-                  color: enMisPaletas ? "#0F5132" : "#5B6470",
-                  background: enMisPaletas ? "#EAF1EC" : undefined,
+                  color: enMisPaletas ? "#057305" : "#5B6470",
+                  background: enMisPaletas ? "#EAF4EA" : undefined,
                   fontWeight: 600,
-                  outlineColor: "#0F5132",
+                  outlineColor: "#057305",
                 }}
               >
                 <LayoutGrid size={18} aria-hidden />
@@ -178,9 +178,9 @@ export function Header({
                   style={{
                     background: "#F2F1ED",
                     border: "1px solid #E6E4DF",
-                    color: "#0F5132",
+                    color: "#057305",
                     fontWeight: 700,
-                    outlineColor: "#0F5132",
+                    outlineColor: "#057305",
                   }}
                 >
                   <span aria-hidden>{iniciales}</span>
@@ -197,7 +197,7 @@ export function Header({
                   <Link
                     href="/cuenta"
                     className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-                    style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+                    style={{ color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
                   >
                     <UserRound size={16} aria-hidden /> Mi cuenta
                   </Link>
@@ -205,7 +205,7 @@ export function Header({
                     <button
                       type="submit"
                       className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-left text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-                      style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+                      style={{ color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
                     >
                       <LogOut size={16} aria-hidden /> Cerrar sesión
                     </button>
@@ -217,7 +217,7 @@ export function Header({
             <Link
               href="/auth"
               className="flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#0F5132" }}
+              style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#057305" }}
             >
               <LogIn size={16} aria-hidden /> Ingresar
             </Link>

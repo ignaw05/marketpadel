@@ -37,7 +37,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
           <Link
             href="/terminos"
             className="mt-1 inline-flex min-h-[44px] items-center text-[13px] underline focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ color: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+            style={{ color: "#057305", fontWeight: 600, outlineColor: "#057305" }}
           >
             Términos y condiciones
           </Link>

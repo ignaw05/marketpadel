@@ -15,7 +15,7 @@ import { formatPrecio, foto, paginaActual, vencida } from "@/lib/paletas";
 const FECHA = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" });
 
 const BADGE = {
-  activa: { texto: "Activa", fondo: "rgba(15,81,50,0.1)", color: "#0F5132" },
+  activa: { texto: "Activa", fondo: "rgba(5,115,5,0.1)", color: "#057305" },
   pausada: { texto: "Pausada", fondo: "#F2F1ED", color: "#5B6470" },
   vendida: { texto: "Vendida", fondo: "rgba(20,23,26,0.08)", color: "#14171A" },
   eliminada: { texto: "Dada de baja", fondo: "rgba(212,24,61,0.08)", color: "#D4183D" },
@@ -35,7 +35,7 @@ const campoStyle = {
   background: "#FFFFFF",
   border: "1px solid #E6E4DF",
   color: "#14171A",
-  outlineColor: "#0F5132",
+  outlineColor: "#057305",
 } as const;
 
 /** GET nativo: los filtros quedan en la URL y el back del navegador funciona. */
@@ -82,7 +82,7 @@ function Filtros({ f }: { f: FiltrosAdmin }) {
       <button
         type="submit"
         className="min-h-[44px] self-end rounded-[14px] px-4 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+        style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
       >
         Filtrar
       </button>
@@ -113,7 +113,7 @@ function Fila({ p }: { p: PublicacionAdmin }) {
         <p className="truncate text-[14px]" style={{ color: "#14171A", fontWeight: 600 }}>
           {titulo}
         </p>
-        <p className="text-[15px]" style={{ color: "#0F5132", fontWeight: 700 }}>
+        <p className="text-[15px]" style={{ color: "#057305", fontWeight: 700 }}>
           {formatPrecio(p.precio)}
         </p>
         <p className="mt-1 line-clamp-2 text-[13px]" style={{ color: "#5B6470" }}>
@@ -132,7 +132,7 @@ function Fila({ p }: { p: PublicacionAdmin }) {
           <Link
             href={`/admin/usuarios?q=${encodeURIComponent(p.vendedor)}`}
             className="focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ color: "#5B6470", textDecoration: "underline", outlineColor: "#0F5132" }}
+            style={{ color: "#5B6470", textDecoration: "underline", outlineColor: "#057305" }}
           >
             {p.vendedor}
           </Link>
@@ -146,7 +146,7 @@ function Fila({ p }: { p: PublicacionAdmin }) {
           <Link
             href={`/paletas/${p.id}`}
             className="flex min-h-[44px] items-center rounded-[14px] px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+            style={{ border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
           >
             Ver
           </Link>
@@ -201,7 +201,7 @@ export default async function Page({
           <Link
             href="/admin/publicaciones"
             className="focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ color: "#0F5132", fontWeight: 600, textDecoration: "underline", outlineColor: "#0F5132" }}
+            style={{ color: "#057305", fontWeight: 600, textDecoration: "underline", outlineColor: "#057305" }}
           >
             Ver todas
           </Link>
@@ -217,7 +217,7 @@ export default async function Page({
             className="flex h-16 w-16 items-center justify-center rounded-full"
             style={{ background: "#F2F1ED" }}
           >
-            <PackageOpen size={28} style={{ color: "#0F5132" }} aria-hidden />
+            <PackageOpen size={28} style={{ color: "#057305" }} aria-hidden />
           </div>
           <p className="mt-4 text-[16px]" style={{ color: "#14171A", fontWeight: 600 }}>
             No hay publicaciones con esos filtros

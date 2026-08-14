@@ -17,7 +17,7 @@ export function Metric({
       <p className="text-[13px]" style={{ color: "#5B6470" }}>
         {label}
       </p>
-      <p className="mt-1 text-[24px]" style={{ color: "#0F5132", fontWeight: 800 }}>
+      <p className="mt-1 text-[24px]" style={{ color: "#057305", fontWeight: 800 }}>
         {value}
       </p>
       {detalle && (

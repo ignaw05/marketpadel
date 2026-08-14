@@ -16,7 +16,7 @@ import {
 } from "@/lib/paletas";
 
 const BADGE = {
-  activa: { texto: "Activa", fondo: "rgba(15,81,50,0.1)", color: "#0F5132" },
+  activa: { texto: "Activa", fondo: "rgba(5,115,5,0.1)", color: "#057305" },
   pausada: { texto: "Pausada", fondo: "#F2F1ED", color: "#5B6470" },
   vendida: { texto: "Vendida", fondo: "rgba(20,23,26,0.08)", color: "#14171A" },
   eliminada: { texto: "Eliminada", fondo: "#F2F1ED", color: "#5B6470" },
@@ -56,11 +56,11 @@ function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boo
         <Link
           href={`/paletas/${paleta.id}`}
           className="block truncate text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+          style={{ color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
         >
           {titulo}
         </Link>
-        <p className="text-[15px]" style={{ color: "#0F5132", fontWeight: 700 }}>
+        <p className="text-[15px]" style={{ color: "#057305", fontWeight: 700 }}>
           {formatPrecio(paleta.precio)}
         </p>
         <div
@@ -76,7 +76,7 @@ function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boo
           {paleta.promocionada ? (
             <span
               className="flex items-center gap-1 rounded-full px-2 py-0.5"
-              style={{ background: "#0F5132", color: "#FFFFFF", fontWeight: 600 }}
+              style={{ background: "#057305", color: "#FFFFFF", fontWeight: 600 }}
             >
               <Star size={11} aria-hidden /> Promocionada
             </span>
@@ -85,7 +85,7 @@ function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boo
               id={paleta.id}
               titulo={`${paleta.marca} ${paleta.modelo}`}
               auto={recienPublicada}
-              className="inline-flex items-center gap-1 rounded-full border border-[#0F5132] px-2.5 py-0.5 text-[12px] font-semibold text-[#0F5132] hover:bg-[rgba(15,81,50,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5132]"
+              className="inline-flex items-center gap-1 rounded-full border border-[#057305] px-2.5 py-0.5 text-[12px] font-semibold text-[#057305] hover:bg-[rgba(5,115,5,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#057305]"
             />
           ) : null}
           {enJuego && <MarcarVendida id={paleta.id} titulo={titulo} />}
@@ -119,8 +119,8 @@ function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boo
 const AVISO_PAGO = {
   exito: {
     texto: "Pago aprobado. La promoción se activa en unos segundos; si todavía no la ves, recargá.",
-    fondo: "rgba(15,81,50,0.08)",
-    color: "#0F5132",
+    fondo: "rgba(5,115,5,0.08)",
+    color: "#057305",
     alerta: false,
   },
   pendiente: {
@@ -165,7 +165,7 @@ export function MyListings({
         <p
           role="status"
           className="mt-4 flex items-center gap-2 rounded-[14px] p-3 text-[14px]"
-          style={{ background: "rgba(15,81,50,0.08)", color: "#0F5132" }}
+          style={{ background: "rgba(5,115,5,0.08)", color: "#057305" }}
         >
           <CheckCircle2 size={16} aria-hidden /> ¡Paleta publicada! Ya está visible para todos.
         </p>
@@ -175,7 +175,7 @@ export function MyListings({
         <p
           role="status"
           className="mt-4 flex items-center gap-2 rounded-[14px] p-3 text-[14px]"
-          style={{ background: "rgba(15,81,50,0.08)", color: "#0F5132" }}
+          style={{ background: "rgba(5,115,5,0.08)", color: "#057305" }}
         >
           <CheckCircle2 size={16} aria-hidden /> Cambios guardados.
         </p>
@@ -212,7 +212,7 @@ export function MyListings({
               className="flex h-16 w-16 items-center justify-center rounded-full"
               style={{ background: "#F2F1ED" }}
             >
-              <PackageOpen size={28} style={{ color: "#0F5132" }} aria-hidden />
+              <PackageOpen size={28} style={{ color: "#057305" }} aria-hidden />
             </div>
             <p className="mt-4 text-[16px]" style={{ color: "#14171A", fontWeight: 600 }}>
               Todavía no publicaste nada
@@ -223,7 +223,7 @@ export function MyListings({
             <Link
               href="/publicar"
               className="mt-5 flex min-h-[44px] items-center gap-2 rounded-[14px] px-4 py-2.5 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+              style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
             >
               <Plus size={16} aria-hidden /> Publicar tu primera paleta
             </Link>

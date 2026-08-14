@@ -25,7 +25,7 @@ const ESTILO = {
   border: "1px solid #E6E4DF",
   color: "#14171A",
   fontWeight: 600,
-  outlineColor: "#0F5132",
+  outlineColor: "#057305",
 } as const;
 
 export function Paginacion({

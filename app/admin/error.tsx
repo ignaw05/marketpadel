@@ -33,7 +33,7 @@ export default function Error({
         type="button"
         onClick={reset}
         className="mt-5 flex min-h-[44px] items-center gap-2 rounded-[14px] px-4 py-2.5 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+        style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
       >
         <RotateCw size={16} aria-hidden /> Reintentar
       </button>

@@ -23,7 +23,7 @@ function Barra({ valor, max }: { valor: number; max: number }) {
     >
       <span
         className="block h-1 rounded-full"
-        style={{ width: `${ancho}%`, background: "#0F5132" }}
+        style={{ width: `${ancho}%`, background: "#057305" }}
       />
     </span>
   );
@@ -76,7 +76,7 @@ function Historico({ filas }: { filas: Estadisticas["historico"] }) {
               </td>
               <td
                 className="whitespace-nowrap px-4 py-2.5 text-right"
-                style={{ color: "#0F5132", fontWeight: 600 }}
+                style={{ color: "#057305", fontWeight: 600 }}
               >
                 {formatPrecio(f.ingresos)}
                 <Barra valor={f.ingresos} max={maxIngresos} />

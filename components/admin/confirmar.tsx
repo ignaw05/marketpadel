@@ -13,7 +13,7 @@ function BotonConfirmar({
   peligro: boolean;
 }) {
   const { pending } = useFormStatus();
-  const color = peligro ? "#D4183D" : "#0F5132";
+  const color = peligro ? "#D4183D" : "#057305";
   return (
     <button
       type="submit"
@@ -73,7 +73,7 @@ export function Confirmar({
           border: `1px solid ${peligro ? "#D4183D" : "#E6E4DF"}`,
           color: peligro ? "#D4183D" : "#14171A",
           fontWeight: 600,
-          outlineColor: peligro ? "#D4183D" : "#0F5132",
+          outlineColor: peligro ? "#D4183D" : "#057305",
         }}
       >
         {etiqueta}
@@ -93,7 +93,7 @@ export function Confirmar({
             type="button"
             onClick={() => dialogo.current?.close()}
             className="min-h-[44px] flex-1 rounded-[14px] py-2.5 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ background: "#FAFAF8", border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+            style={{ background: "#FAFAF8", border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
           >
             Cancelar
           </button>

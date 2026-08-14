@@ -56,11 +56,11 @@ function Dropdown({
         aria-expanded={abierto}
         className="flex min-h-[44px] shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 md:w-full md:justify-between md:rounded-[12px]"
         style={{
-          background: valor ? "#0F5132" : "#FFFFFF",
+          background: valor ? "#057305" : "#FFFFFF",
           color: valor ? "#FFFFFF" : "#14171A",
-          border: `1px solid ${valor ? "#0F5132" : "#E6E4DF"}`,
+          border: `1px solid ${valor ? "#057305" : "#E6E4DF"}`,
           fontWeight: 600,
-          outlineColor: "#0F5132",
+          outlineColor: "#057305",
         }}
       >
         {valor ?? etiqueta}
@@ -134,7 +134,7 @@ function Orden() {
         onClick={() => setAbierto((o) => !o)}
         aria-expanded={abierto}
         className="flex min-h-[52px] w-full items-center gap-2.5 rounded-[12px] px-3.5 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ background: "#0F5132", color: "#FFFFFF", outlineColor: "#0F5132" }}
+        style={{ background: "#057305", color: "#FFFFFF", outlineColor: "#057305" }}
       >
         <ArrowUpDown size={18} aria-hidden style={{ flexShrink: 0 }} />
         <span className="min-w-0 flex-1">
@@ -178,7 +178,7 @@ function Orden() {
                 aria-current={actual.valor === o.valor ? "true" : undefined}
                 className="flex min-h-[44px] items-center justify-between gap-2 rounded-[10px] px-3 py-2.5 text-[13px] hover:bg-[#F2F1ED]"
                 style={{
-                  color: actual.valor === o.valor ? "#0F5132" : "#14171A",
+                  color: actual.valor === o.valor ? "#057305" : "#14171A",
                   fontWeight: actual.valor === o.valor ? 700 : 400,
                 }}
               >
@@ -232,7 +232,7 @@ function PrecioSlider() {
         onPointerUp={aplicar}
         onKeyUp={aplicar}
         className="h-11 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ accentColor: "#0F5132", outlineColor: "#0F5132" }}
+        style={{ accentColor: "#057305", outlineColor: "#057305" }}
       />
     </div>
   );
@@ -264,7 +264,7 @@ export function Filtros({ marcas, ciudades }: { marcas: string[]; ciudades: stri
         <Link
           href={limpio.toString() ? `/?${limpio}` : "/"}
           className="flex min-h-[44px] items-center gap-1 rounded-full px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 md:justify-center"
-          style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#0F5132" }}
+          style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#057305" }}
         >
           <X size={14} aria-hidden /> Limpiar filtros
         </Link>

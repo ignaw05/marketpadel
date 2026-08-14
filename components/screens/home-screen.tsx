@@ -29,7 +29,7 @@ function SinResultados() {
           border: "1px solid #E6E4DF",
           color: "#14171A",
           fontWeight: 600,
-          outlineColor: "#0F5132",
+          outlineColor: "#057305",
         }}
       >
         Ver todas las paletas
@@ -48,7 +48,7 @@ function TodavíaNoHayNada() {
         className="flex h-16 w-16 items-center justify-center rounded-full"
         style={{ background: "#F2F1ED" }}
       >
-        <PackageOpen size={28} style={{ color: "#0F5132" }} aria-hidden />
+        <PackageOpen size={28} style={{ color: "#057305" }} aria-hidden />
       </div>
       <p className="mt-4 text-[16px]" style={{ color: "#14171A", fontWeight: 600 }}>
         Todavía no hay paletas publicadas
@@ -59,7 +59,7 @@ function TodavíaNoHayNada() {
       <Link
         href="/publicar"
         className="mt-5 flex min-h-[44px] items-center gap-2 rounded-[14px] px-4 py-2.5 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+        style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
       >
         <Plus size={16} aria-hidden /> Publicar una paleta
       </Link>

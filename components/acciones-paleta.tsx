@@ -20,7 +20,7 @@ function ItemSubmit({
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className={itemClass} style={{ color, outlineColor: "#0F5132" }}>
+    <button type="submit" disabled={pending} className={itemClass} style={{ color, outlineColor: "#057305" }}>
       {children}
     </button>
   );
@@ -53,7 +53,7 @@ export function AccionesPaleta({ paleta }: { paleta: Paleta }) {
         onClick={() => setMenu((o) => !o)}
         aria-expanded={menu}
         className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ color: "#5B6470", outlineColor: "#0F5132" }}
+        style={{ color: "#5B6470", outlineColor: "#057305" }}
       >
         <MoreVertical size={18} aria-hidden />
         <span className="sr-only">Acciones de {paleta.marca} {paleta.modelo}</span>
@@ -76,7 +76,7 @@ export function AccionesPaleta({ paleta }: { paleta: Paleta }) {
               href={`/editar/${paleta.id}`}
               onClick={() => setMenu(false)}
               className={itemClass}
-              style={{ color: "#14171A", outlineColor: "#0F5132" }}
+              style={{ color: "#14171A", outlineColor: "#057305" }}
             >
               <Pencil size={15} aria-hidden /> Editar
             </Link>
@@ -143,7 +143,7 @@ export function AccionesPaleta({ paleta }: { paleta: Paleta }) {
             type="button"
             onClick={() => dialogo.current?.close()}
             className="min-h-[44px] flex-1 rounded-[14px] py-2.5 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ background: "#FAFAF8", border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#0F5132" }}
+            style={{ background: "#FAFAF8", border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
           >
             Cancelar
           </button>
