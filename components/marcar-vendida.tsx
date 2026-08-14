@@ -11,7 +11,7 @@ function Boton({ titulo }: { titulo: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] text-white transition-opacity hover:opacity-90 disabled:opacity-60 disabled:hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
     >
       <CheckCircle2 size={11} aria-hidden />

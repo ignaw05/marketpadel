@@ -8,6 +8,27 @@ import { cerrarSesion } from "@/app/auth/actions";
 
 const OTROS_FILTROS = ["marca", "forma", "ciudad", "precioMax", "estado"];
 
+/** ponytail: SVG inline. lucide-react v1 sacó los iconos de marca, no hay `Instagram`. */
+function IconoInstagram() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
 /**
  * ponytail: form GET nativo, busca al hacer Enter. Sin router.replace por tecla,
  * que ahora seria una query a la base por letra. Si se quiere busqueda en vivo,
@@ -84,6 +105,25 @@ export function Header({
       className="sticky top-0 z-30"
       style={{ background: "#FFFFFF", borderBottom: "1px solid #E6E4DF" }}
     >
+      {/* ponytail: franja propia arriba de todo. En el row principal el link de
+          Instagram compite por ancho con Publicar/Mis paletas/avatar y en 320px
+          los empuja fuera de pantalla. */}
+      <div style={{ background: "#0F5132" }}>
+        <div className="mx-auto flex max-w-[1280px] justify-end px-4 md:px-6">
+          <a
+            href="https://instagram.com/paletita.ar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-[13px] text-white transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
+            style={{ fontWeight: 600 }}
+          >
+            <IconoInstagram />
+            @paletita.ar
+            <span className="sr-only"> en Instagram (abre en una pestaña nueva)</span>
+          </a>
+        </div>
+      </div>
+
       <div className="mx-auto flex max-w-[1280px] items-center gap-2 px-4 py-3 sm:gap-3 md:gap-5 md:px-6">
         <Link
           href="/"

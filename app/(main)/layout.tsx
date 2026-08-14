@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { Header } from "@/components/header";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,6 +27,22 @@ export default async function MainLayout({ children }: { children: React.ReactNo
         />
       </Suspense>
       {children}
+
+      <footer className="mt-10" style={{ borderTop: "1px solid #E6E4DF" }}>
+        <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-6">
+          <p className="text-[13px] leading-relaxed" style={{ color: "#5B6470" }}>
+            Paletita solo conecta compradores y vendedores. No participamos de las operaciones ni
+            somos responsables por ellas.
+          </p>
+          <Link
+            href="/terminos"
+            className="mt-1 inline-flex min-h-[44px] items-center text-[13px] underline focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ color: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+          >
+            Términos y condiciones
+          </Link>
+        </div>
+      </footer>
     </>
   );
 }
