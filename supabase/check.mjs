@@ -164,6 +164,36 @@ try {
   assert.equal(conVisita.visitas, 1);
   paso("incrementar_visitas suma desde un cliente anonimo");
 
+  // 8b. El feed entero sin sesion. Es la premisa de clientePublico(): estas
+  // cuatro lecturas no miran auth.uid(), asi que no tienen por que mandar el
+  // JWT del usuario. Mandarlo era lo que las exponia a PGRST303 ("JWT issued
+  // at future") y tiraba el home a error.tsx despues de 3 reintentos.
+  const { error: eFeedAnon } = await anon.from("paletas_publicas").select(VISTA);
+  assert.equal(eFeedAnon, null, `listarPaletas sin sesion: ${eFeedAnon?.message}`);
+
+  const { error: eCiudadesAnon } = await anon
+    .from("paletas_publicas")
+    .select("ciudad")
+    .limit(500);
+  assert.equal(eCiudadesAnon, null, `listarCiudades sin sesion: ${eCiudadesAnon?.message}`);
+
+  const { data: marcasAnon, error: eMarcasAnon } = await anon
+    .from("marcas")
+    .select("id, nombre")
+    .eq("activa", true)
+    .order("nombre");
+  assert.equal(eMarcasAnon, null, `listarMarcas sin sesion: ${eMarcasAnon?.message}`);
+  assert.ok(marcasAnon.length > 0, "el filtro de marcas no puede venir vacio");
+
+  const { data: detalleAnon, error: eDetalleAnon } = await anon
+    .from("paletas_publicas")
+    .select(`${VISTA}, perfiles!vendedor_id (nombre, apellido, whatsapp, created_at)`)
+    .eq("id", creada.id)
+    .maybeSingle();
+  assert.equal(eDetalleAnon, null, `obtenerPaleta sin sesion: ${eDetalleAnon?.message}`);
+  assert.equal(detalleAnon.perfiles.nombre, "Ana", "el vendedor se ve sin estar logueado");
+  paso("el feed, los filtros y el detalle se sirven sin sesion");
+
   // 9. RLS: otro usuario no puede tocar la publicacion
   const { data: tocada } = await b.cliente
     .from("paletas")

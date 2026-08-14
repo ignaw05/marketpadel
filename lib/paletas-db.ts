@@ -1,5 +1,5 @@
 // Solo servidor: usa next/headers via lib/supabase/server.
-import { createClient } from "@/lib/supabase/server";
+import { createClient, clientePublico } from "@/lib/supabase/server";
 import {
   ESTADOS,
   topePrecio,
@@ -29,7 +29,7 @@ const VISTA =
 export async function listarPaletas(
   f: FiltrosFeed,
 ): Promise<{ paletas: Paleta[]; hayMas: boolean }> {
-  const supabase = await createClient();
+  const supabase = clientePublico();
   const busqueda = f.q ? limpiarBusqueda(f.q) : "";
   const tope = topePrecio(f.precioMax);
   const minEstado = ESTADOS.find((e) => e.label === f.estado);
@@ -75,7 +75,7 @@ export async function listarPaletas(
 export async function obtenerPaleta(
   id: string,
 ): Promise<{ paleta: Paleta; vendedor: Vendedor } | null> {
-  const supabase = await createClient();
+  const supabase = clientePublico();
 
   const data = await conReintento(async () => {
     const r = await supabase
@@ -169,7 +169,7 @@ export async function listarMisPaletas(): Promise<Paleta[]> {
 }
 
 export async function listarMarcas(): Promise<{ id: number; nombre: string }[]> {
-  const supabase = await createClient();
+  const supabase = clientePublico();
 
   const data = await conReintento(() =>
     supabase.from("marcas").select("id, nombre").eq("activa", true).order("nombre"),
@@ -180,7 +180,7 @@ export async function listarMarcas(): Promise<{ id: number; nombre: string }[]> 
 
 /** Ciudades con al menos una publicacion activa, para el filtro de ubicacion. */
 export async function listarCiudades(): Promise<string[]> {
-  const supabase = await createClient();
+  const supabase = clientePublico();
 
   // ponytail: distinct en JS sobre el feed. Si crece, una vista materializada.
   const data = await conReintento(() =>
