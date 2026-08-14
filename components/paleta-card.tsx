@@ -18,7 +18,7 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
         background: "#FFFFFF",
         border: "1px solid #E6E4DF",
         boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-        outlineColor: "#0F5132",
+        outlineColor: "#057305",
       }}
     >
       {/* aspect-ratio en vez de alto fijo: la grilla queda pareja en cualquier
@@ -37,7 +37,7 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
         {paleta.promocionada && (
           <span
             className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
-            style={{ background: "#0F5132", color: "#FFFFFF", fontWeight: 700 }}
+            style={{ background: "#057305", color: "#FFFFFF", fontWeight: 700 }}
           >
             <Star size={11} aria-hidden /> Destacada
           </span>
@@ -67,7 +67,7 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
             {paleta.anio}
           </span>
         </div>
-        <p className="mt-2 text-[19px]" style={{ color: "#0F5132", fontWeight: 700 }}>
+        <p className="mt-2 text-[19px]" style={{ color: "#057305", fontWeight: 700 }}>
           {formatPrecio(paleta.precio)}
         </p>
         <p className="mt-1.5 flex items-center gap-1 text-[13px]" style={{ color: "#5B6470" }}>

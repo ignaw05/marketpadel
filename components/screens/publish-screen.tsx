@@ -33,7 +33,7 @@ const inputStyle = (error?: string): React.CSSProperties => ({
   background: "#FAFAF8",
   border: `1px solid ${error ? "#D4183D" : "#E6E4DF"}`,
   color: "#14171A",
-  outlineColor: "#0F5132",
+  outlineColor: "#057305",
 });
 
 const campoClass =
@@ -130,7 +130,7 @@ function MoverFoto({
       onClick={onClick}
       disabled={disabled}
       className="flex h-11 w-11 items-center justify-center rounded-[10px] disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-offset-2"
-      style={{ color: "#14171A", outlineColor: "#0F5132" }}
+      style={{ color: "#14171A", outlineColor: "#057305" }}
     >
       <Icono size={18} aria-hidden />
       <span className="sr-only">
@@ -263,7 +263,7 @@ function CampoMarca({
                 style={{
                   color: "#14171A",
                   background: i === activo ? "#F2F1ED" : "transparent",
-                  outlineColor: "#0F5132",
+                  outlineColor: "#057305",
                 }}
               >
                 {m.nombre}
@@ -283,7 +283,7 @@ function Submit({ editando }: { editando: boolean }) {
       type="submit"
       disabled={pending}
       className="min-h-[44px] w-full rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
-      style={{ background: "#0F5132", fontWeight: 600, outlineColor: "#0F5132" }}
+      style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
     >
       {editando
         ? pending
@@ -569,10 +569,10 @@ export function PublishScreen({
                 style={{
                   aspectRatio: "1",
                   width: "100%",
-                  border: `1.5px dashed ${drag ? "#0F5132" : e.fotos || aviso ? "#D4183D" : "#E6E4DF"}`,
-                  background: drag ? "rgba(15,81,50,0.04)" : "#FAFAF8",
+                  border: `1.5px dashed ${drag ? "#057305" : e.fotos || aviso ? "#D4183D" : "#E6E4DF"}`,
+                  background: drag ? "rgba(5,115,5,0.04)" : "#FAFAF8",
                   color: "#5B6470",
-                  outlineColor: "#0F5132",
+                  outlineColor: "#057305",
                 }}
               >
                 {procesando ? (
@@ -644,11 +644,11 @@ export function PublishScreen({
                   aria-pressed={activa}
                   className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] py-2.5 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                   style={{
-                    background: activa ? "#0F5132" : "#FAFAF8",
+                    background: activa ? "#057305" : "#FAFAF8",
                     color: activa ? "#FFFFFF" : "#14171A",
-                    border: `1px solid ${activa ? "#0F5132" : "#E6E4DF"}`,
+                    border: `1px solid ${activa ? "#057305" : "#E6E4DF"}`,
                     fontWeight: 600,
-                    outlineColor: "#0F5132",
+                    outlineColor: "#057305",
                   }}
                 >
                   {formaIcon(f)} {f}
@@ -682,7 +682,7 @@ export function PublishScreen({
             value={estado}
             onChange={(ev) => setEstado(Number(ev.target.value))}
             className="w-full"
-            style={{ accentColor: "#0F5132" }}
+            style={{ accentColor: "#057305" }}
           />
           <div className="flex justify-between text-[11px]" style={{ color: "#5B6470" }}>
             <span>1/10</span>

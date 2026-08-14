@@ -15,10 +15,10 @@ function Boton({ titulo }: { titulo: string }) {
       className="flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 text-[13px] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{
         background: "#FFFFFF",
-        border: "1px solid #0F5132",
-        color: "#0F5132",
+        border: "1px solid #057305",
+        color: "#057305",
         fontWeight: 600,
-        outlineColor: "#0F5132",
+        outlineColor: "#057305",
       }}
     >
       <RotateCw size={14} aria-hidden />

@@ -26,7 +26,7 @@ function Flecha({
         background: "rgba(255,255,255,0.92)",
         color: "#14171A",
         boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-        outlineColor: "#0F5132",
+        outlineColor: "#057305",
       }}
     >
       {anterior ? <ChevronLeft size={22} aria-hidden /> : <ChevronRight size={22} aria-hidden />}
@@ -71,7 +71,7 @@ export function Galeria({ fotos, titulo }: { fotos: string[]; titulo: string }) 
           role={varias ? "group" : undefined}
           aria-label={varias ? `Fotos de ${titulo}` : undefined}
           className="flex snap-x snap-mandatory overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2"
-          style={{ scrollbarWidth: "none", outlineColor: "#0F5132" }}
+          style={{ scrollbarWidth: "none", outlineColor: "#057305" }}
         >
           {fotos.map((f, i) => (
             <button
@@ -79,7 +79,7 @@ export function Galeria({ fotos, titulo }: { fotos: string[]; titulo: string }) 
               type="button"
               onClick={() => lupa.current?.showModal()}
               className="relative w-full shrink-0 cursor-zoom-in snap-center overflow-hidden focus-visible:outline-2 focus-visible:-outline-offset-2"
-              style={{ background: "#F2F1ED", aspectRatio: "4 / 5", outlineColor: "#0F5132" }}
+              style={{ background: "#F2F1ED", aspectRatio: "4 / 5", outlineColor: "#057305" }}
             >
               {/* Fondo: la misma foto ampliada y borroneada. Llena el cuadro sin
                   recortar la paleta ni dejar barras grises al costado. */}
@@ -130,13 +130,13 @@ export function Galeria({ fotos, titulo }: { fotos: string[]; titulo: string }) 
               onClick={() => irA(i)}
               aria-current={i === actual ? "true" : undefined}
               className="flex h-11 w-8 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ outlineColor: "#0F5132" }}
+              style={{ outlineColor: "#057305" }}
             >
               <span
                 className="block h-2 rounded-full transition-all"
                 style={{
                   width: i === actual ? 20 : 8,
-                  background: i === actual ? "#0F5132" : "#D8D5CE",
+                  background: i === actual ? "#057305" : "#D8D5CE",
                 }}
               />
               <span className="sr-only">Ver la foto {i + 1}</span>

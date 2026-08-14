@@ -83,7 +83,7 @@ export function PromocionarDialog({
         ref={dialogo}
         aria-labelledby={`promo-${id}`}
         className="m-auto w-[min(400px,calc(100vw-2rem))] rounded-[14px] p-6 backdrop:bg-[rgba(20,23,26,0.6)]"
-        style={{ background: "#0F5132", color: "#FFFFFF" }}
+        style={{ background: "#057305", color: "#FFFFFF" }}
       >
         <p className="text-[12px] uppercase" style={{ color: LIMA, fontWeight: 800, letterSpacing: "0.04em" }}>
           Destacá tu publicación

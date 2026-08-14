@@ -157,7 +157,7 @@ function Encabezado({
     <>
       <div
         className="mx-auto flex h-16 w-16 items-center justify-center rounded-full"
-        style={{ background: "rgba(15,81,50,0.08)" }}
+        style={{ background: "rgba(5,115,5,0.08)" }}
       >
         <Icono size={30} style={{ color: VERDE }} aria-hidden />
       </div>

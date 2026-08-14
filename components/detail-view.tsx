@@ -46,7 +46,7 @@ export function DetailView({
         {paleta.promocionada && (
           <p
             className="mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
-            style={{ background: "#0F5132", color: "#FFFFFF", fontWeight: 700 }}
+            style={{ background: "#057305", color: "#FFFFFF", fontWeight: 700 }}
           >
             <Star size={11} aria-hidden /> Destacada
           </p>
@@ -55,7 +55,7 @@ export function DetailView({
           {paleta.marca}
         </p>
         <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 22 }}>{paleta.modelo}</h1>
-        <p className="mt-1 text-[26px]" style={{ color: "#0F5132", fontWeight: 800 }}>
+        <p className="mt-1 text-[26px]" style={{ color: "#057305", fontWeight: 800 }}>
           {formatPrecio(paleta.precio)}
         </p>
 
@@ -76,7 +76,7 @@ export function DetailView({
         >
           <div
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white"
-            style={{ background: "#0F5132", fontWeight: 700 }}
+            style={{ background: "#057305", fontWeight: 700 }}
             aria-hidden
           >
             {vendedor.nombre[0]}
@@ -115,7 +115,7 @@ export function DetailView({
               target="_blank"
               rel="noreferrer"
               className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#0F5132" }}
+              style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#057305" }}
             >
               <MessageCircle size={19} aria-hidden /> Contactar por WhatsApp
             </a>
@@ -124,7 +124,7 @@ export function DetailView({
               <Link
                 href={`/auth?next=${encodeURIComponent(`/paletas/${paleta.id}`)}`}
                 className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#0F5132" }}
+                style={{ background: "#128C4B", fontWeight: 700, outlineColor: "#057305" }}
               >
                 <MessageCircle size={19} aria-hidden /> Iniciá sesión para contactar
               </Link>
@@ -136,7 +136,7 @@ export function DetailView({
         ) : paleta.promocionada ? (
           <p
             className="flex items-center justify-center gap-2 rounded-[14px] py-3 text-[14px]"
-            style={{ background: "rgba(15,81,50,0.08)", color: "#0F5132", fontWeight: 600 }}
+            style={{ background: "rgba(5,115,5,0.08)", color: "#057305", fontWeight: 600 }}
           >
             <Star size={16} aria-hidden /> Promocionada: aparece primero en las búsquedas
           </p>
@@ -144,7 +144,7 @@ export function DetailView({
           <PromocionarDialog
             id={paleta.id}
             titulo={titulo}
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F5132] bg-[#0F5132]"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#057305] bg-[#057305]"
           />
         )}
       </div>
