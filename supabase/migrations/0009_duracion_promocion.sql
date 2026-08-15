@@ -1,24 +1,23 @@
--- marketpadel: el resumen del panel deja de ser un corte fijo.
+-- marketpadel: abrir las promociones tambien por duracion.
 --
--- 0007 devolvia siempre lo mismo: los totales de siempre mas 12 meses de
--- historico con 3 series. El panel ahora grafica y necesita elegir la ventana,
--- asi que la funcion pasa a tomar un rango.
+-- 0008 dejo el resumen del panel con las promociones abiertas por origen
+-- (`tipos`). Falta la otra pregunta, que es la que decide el precio de los
+-- planes: cuantas se compran de 15 dias y cuantas de 30.
 --
--- El shape del jsonb cambia: se va `historico` y entran `serie` (la ventana
--- pedida, 5 series) y `tipos` (promociones por origen). lib/admin-db.ts y
--- app/admin/page.tsx cambian en el mismo commit.
+-- Va en una migracion aparte y no editando 0008 porque 0008 YA CORRIO en
+-- produccion. Una migracion aplicada es un registro de lo que paso, no un
+-- archivo que se retoca: reescribirla dejaria el repo diciendo una cosa y la
+-- base otra, y ademas 0008 arranca con un `drop function estadisticas_admin()`
+-- que hoy ya no existe, asi que volver a correrla fallaria.
 --
--- Lo que esta funcion NO puede responder, y por eso no lo intenta: cuanta
--- gente entra al sitio. La base no guarda visitas de pagina; eso lo mide
--- Vercel Analytics, que ya esta instalado. El panel linkea a ese dashboard.
+-- Unico cambio en la funcion: la clave `duraciones` del jsonb. Todo lo demas
+-- queda igual, por eso es un create or replace del cuerpo completo (Postgres no
+-- deja parchear media funcion).
+--
+-- La duracion no es una columna: se deriva de hasta - desde, que es exactamente
+-- como la escribe registrar_promocion_pagada (0003).
 
-drop function estadisticas_admin();
-
--- set timezone NO ES DECORATIVO: date_trunc sobre timestamptz usa el TimeZone
--- de la sesion, y en Supabase eso es UTC. Sin esto un "dia" del grafico
--- arranca a las 21:00 hora argentina y las ventas de la noche caen en el dia
--- siguiente. Los buckets diarios y semanales se calculan en hora local.
-create function estadisticas_admin(p_rango text default 'mes') returns jsonb
+create or replace function estadisticas_admin(p_rango text default 'mes') returns jsonb
 language plpgsql
 security definer
 set search_path = public
@@ -109,6 +108,28 @@ begin
       ) from promociones where desde >= v_desde
     ),
 
+
+    -- ------------------------------------------------ duracion de la promocion
+    -- Los dos planes que se venden (PLANES en lib/paletas.ts) son de 15 y 30
+    -- dias. La duracion no esta guardada como columna: se deriva de hasta -
+    -- desde, que es exactamente como la escribe registrar_promocion_pagada.
+    --
+    -- otras no es relleno: las premium y las de cortesia las inserta otro
+    -- camino y pueden traer cualquier plazo. Sin ese cajon, la suma de las
+    -- barras no daria el total y el grafico mentiria.
+    'duraciones', (
+      select jsonb_build_object(
+        'd15',   count(*) filter (where dias = 15),
+        'd30',   count(*) filter (where dias = 30),
+        'otras', count(*) filter (where dias not in (15, 30))
+      ) from (
+        -- round y no trunc: 30 dias de calendario pueden dar 29.96 si en el
+        -- medio hubo cambio de huso, y truncando eso caeria en 'otras'.
+        select round(extract(epoch from (hasta - desde)) / 86400)::int as dias
+          from promociones where desde >= v_desde
+      ) p
+    ),
+
     -- ---------------------------------------------------------------- serie
     -- generate_series y no group by: un periodo sin actividad tiene que salir
     -- con 0, no desaparecer. Un grafico al que le faltan las barras vacias
@@ -152,13 +173,14 @@ begin
     )
   );
 end $$;
-
 comment on function estadisticas_admin(text) is
   'Resumen del panel de superadmin en un solo jsonb. p_rango: dia, semana, '
   'mes, anio o total. Solo service_role.';
 
--- security definer + una vista que saltea RLS: sin esto cualquier usuario
--- logueado se entera de cuanta plata entra.
+-- create or replace NO conserva los grants de la funcion vieja en cuanto a
+-- PUBLIC: Postgres le vuelve a dar execute a public en cada create. Repetir el
+-- revoke no es defensivo de mas, es lo que impide que cualquier usuario
+-- logueado se entere de cuanta plata entra.
 revoke execute on function estadisticas_admin(text) from public, anon, authenticated;
 grant execute on function estadisticas_admin(text) to service_role;
 
@@ -172,86 +194,67 @@ declare
   marca smallint;
   pal   uuid;
   pag   uuid;
+  pag30 uuid;
   e     jsonb;
-  ult   jsonb;
   antes jsonb;
-  ok    boolean;
 begin
   antes := estadisticas_admin('mes');
 
   insert into auth.users (id, email, raw_user_meta_data)
-  values (u_a, 'check-stats@example.com',
-          '{"nombre":"Check","apellido":"Stats"}'::jsonb);
+  values (u_a, 'check-duracion@example.com',
+          '{"nombre":"Check","apellido":"Duracion"}'::jsonb);
 
   select id into marca from marcas limit 1;
 
   insert into paletas (vendedor_id, marca_id, modelo, forma, anio, estado,
                        precio, provincia, ciudad, descripcion)
-  values (u_a, marca, 'Check Stats', 'Diamante', 2026, 9, 300000,
+  values (u_a, marca, 'Check Duracion', 'Diamante', 2026, 9, 300000,
           'CABA', 'CABA', 'test')
   returning id into pal;
 
+  -- Un pago por promocion: promociones_pago_idx es unico, y con razon. Cada
+  -- plan se cobra por separado.
   insert into pagos (perfil_id, mp_payment_id, monto, estado, concepto)
-  values (u_a, 'check-stats-' || u_a::text, 2000, 'aprobado', 'promocion')
+  values (u_a, 'check-dur-15-' || u_a::text, 2000, 'aprobado', 'promocion')
   returning id into pag;
 
-  insert into promociones (paleta_id, origen, pago_id, hasta)
-  values (pal, 'individual', pag, now() + interval '15 days');
+  insert into pagos (perfil_id, mp_payment_id, monto, estado, concepto)
+  values (u_a, 'check-dur-30-' || u_a::text, 3000, 'aprobado', 'promocion')
+  returning id into pag30;
 
-  -- 1. cada rango trae exactamente los buckets que promete, incluidos los vacios
-  assert jsonb_array_length(estadisticas_admin('dia')    -> 'serie') = 30,
-    'el rango diario tendria que traer 30 dias';
-  assert jsonb_array_length(estadisticas_admin('semana') -> 'serie') = 12,
-    'el rango semanal tendria que traer 12 semanas';
-  assert jsonb_array_length(estadisticas_admin('mes')    -> 'serie') = 12,
-    'el rango mensual tendria que traer 12 meses';
-  assert jsonb_array_length(estadisticas_admin('anio')   -> 'serie') = 5,
-    'el rango anual tendria que traer 5 anios';
-  assert jsonb_array_length(estadisticas_admin('total')  -> 'serie') >= 1,
-    'el rango total tendria que traer al menos un mes';
+  -- Una de cada plan mas una de cortesia con plazo fuera de los planes: las
+  -- tres barras del grafico quedan cubiertas, y la de cortesia es justo el caso
+  -- por el que existe el cajon 'otras'.
+  insert into promociones (paleta_id, origen, pago_id, desde, hasta)
+  values (pal, 'individual', pag,   now(), now() + interval '15 days'),
+         (pal, 'individual', pag30, now(), now() + interval '30 days'),
+         (pal, 'cortesia',   null,  now(), now() + interval '7 days');
 
-  -- 2. el periodo corriente refleja lo que acabamos de insertar
-  e   := estadisticas_admin('mes');
-  ult := (e -> 'serie') -> -1;
+  e := estadisticas_admin('mes');
 
-  assert (ult ->> 'periodo') = to_char(date_trunc('month', now()), 'YYYY-MM-DD'),
-    'el ultimo bucket del rango mensual tendria que ser el mes corriente';
-  assert (ult ->> 'paletas')::int >= 1,
-    'el mes corriente no refleja la paleta recien creada';
-  assert (ult ->> 'ingresos')::bigint >= 2000,
-    'el mes corriente no refleja el pago aprobado';
-  assert (ult ->> 'usuarios')::int >= 1,
-    'el mes corriente no refleja el usuario nuevo';
-  assert (ult ->> 'promociones')::int >= 1,
-    'el mes corriente no refleja la promocion nueva';
+  -- 1. cada promo cae en el plan que le corresponde
+  assert (e #>> '{duraciones,d15}')::int = (antes #>> '{duraciones,d15}')::int + 1,
+    'la promocion de 15 dias no cayo en su plan';
+  assert (e #>> '{duraciones,d30}')::int = (antes #>> '{duraciones,d30}')::int + 1,
+    'la promocion de 30 dias no cayo en su plan';
+  assert (e #>> '{duraciones,otras}')::int = (antes #>> '{duraciones,otras}')::int + 1,
+    'una promocion de plazo distinto tendria que caer en otras';
 
-  -- 3. activos cuenta personas, no eventos: este usuario publico, pago Y
-  -- promociono, y tiene que sumar uno solo.
-  assert (ult ->> 'activos')::int
-         = ((antes -> 'serie') -> -1 ->> 'activos')::int + 1,
-    'un usuario con tres acciones en el periodo tendria que contar una vez';
+  -- 2. lo que importa de verdad: las dos aperturas cuentan las mismas promos.
+  -- Si manana aparece un plan nuevo y no entra en ningun cajon, esto lo agarra.
+  assert (e #>> '{duraciones,d15}')::int + (e #>> '{duraciones,d30}')::int
+         + (e #>> '{duraciones,otras}')::int
+         = (e #>> '{tipos,premium}')::int + (e #>> '{tipos,individual}')::int
+         + (e #>> '{tipos,cortesia}')::int,
+    'las dos aperturas de promociones tendrian que sumar lo mismo';
 
-  -- 4. los tipos de promocion abren por origen y las tres claves estan siempre
-  assert (e #>> '{tipos,individual}')::int
-         = (antes #>> '{tipos,individual}')::int + 1,
-    'no conto la promocion individual';
-  assert (e -> 'tipos') ? 'premium' and (e -> 'tipos') ? 'cortesia',
-    'los tres origenes tienen que estar presentes aunque den 0';
+  -- 3. el resto del resumen no se movio: esto solo agrega una clave
+  assert (e -> 'serie') is not null and jsonb_array_length(e -> 'serie') = 12,
+    'el create or replace se comio la serie';
+  assert (e -> 'paletas') is not null and (e -> 'ganancia') is not null,
+    'el create or replace se comio los totales';
 
-  -- 5. los totales no dependen del rango: son de siempre
-  assert (estadisticas_admin('dia') -> 'paletas')
-         = (estadisticas_admin('anio') -> 'paletas'),
-    'los totales no tendrian que cambiar con el rango';
-
-  -- 6. un rango que no existe falla en vez de devolver cualquier cosa
-  ok := false;
-  begin
-    perform estadisticas_admin('quincenal');
-  exception when others then ok := true;
-  end;
-  assert ok, 'un rango invalido tendria que fallar';
-
-  -- 7. lo que no puede pasar: que anon o authenticated lleguen a esto
+  -- 4. los grants siguen cerrados despues del replace
   assert not has_function_privilege('anon', 'public.estadisticas_admin(text)', 'execute'),
     'anon no puede ejecutar estadisticas_admin';
   assert not has_function_privilege('authenticated', 'public.estadisticas_admin(text)', 'execute'),
@@ -260,8 +263,7 @@ begin
     'service_role tiene que poder ejecutar estadisticas_admin';
 
   -- Teardown en este orden por lo mismo que en 0007: borrar el usuario a secas
-  -- dispara las dos cascadas a promociones a la vez y el check de origen
-  -- explota.
+  -- dispara las dos cascadas a promociones a la vez y el check de origen explota.
   delete from promociones where paleta_id = pal;
   delete from pagos where perfil_id = u_a;
   delete from auth.users where id = u_a;
