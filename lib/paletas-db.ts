@@ -2,7 +2,6 @@
 import { createClient, clientePublico } from "@/lib/supabase/server";
 import {
   ESTADOS,
-  ORDENES,
   topePrecio,
   promoVigente,
   ordenActual,
@@ -40,17 +39,14 @@ export async function listarPaletas(
   const data = await conReintento(() => {
     let query = supabase.from("paletas_publicas").select(VISTA);
 
-    // Las promocionadas van primero solo en el orden por defecto. Si el usuario
-    // pidio otro, ese orden manda: una promocionada de $700.000 arriba de todo
-    // en "menor precio" seria una lista rota.
-    //
-    // Se compara contra ORDENES[0] y no contra un valor escrito a mano: si
-    // manana cambia cual es el default, esto lo sigue solo.
-    if (orden === ORDENES[0]) {
-      query = query.order("promocionada", { ascending: false });
-    }
-
     query = query
+      // Las promocionadas van primero SIEMPRE, en todos los ordenes y con
+      // cualquier filtro puesto: eso es lo que se paga. El orden elegido y los
+      // filtros mandan dentro de cada bloque, no sobre el.
+      //
+      // El costo asumido: en "menor precio" las primeras que se ven no son las
+      // mas baratas del catalogo, sino las mas baratas entre las promocionadas.
+      .order("promocionada", { ascending: false })
       .order(orden.columna, { ascending: orden.asc })
       // Desempate estable: sin esto, dos paletas al mismo precio pueden
       // repetirse o perderse al pasar de pagina.

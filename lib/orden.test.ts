@@ -1,9 +1,8 @@
 import { test, expect } from "vitest";
 import { ORDENES, ordenActual } from "./paletas";
 
-// El feed abre de mas cara a mas barata. Es el unico orden que ademas pone las
-// promocionadas primero (lib/paletas-db.ts compara contra ORDENES[0]), asi que
-// si esto cambia de lugar, la promocion deja de servir para algo.
+// El feed abre de mas cara a mas barata. Las promocionadas van primero en
+// todos los ordenes, asi que esto solo define con que se entra.
 test("el orden por defecto es mayor precio", () => {
   expect(ORDENES[0]).toMatchObject({ valor: "precio-desc", columna: "precio", asc: false });
 });
