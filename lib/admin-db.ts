@@ -10,7 +10,38 @@ import { paginaActual, type EstadoPublicacion } from "@/lib/paletas";
 /** Filas por pagina del panel. Son listas densas, no la grilla del feed. */
 export const POR_PAGINA_ADMIN = 30;
 
+/**
+ * Ventanas del resumen. El orden es el de los botones del panel.
+ *
+ * 'total' no es una ventana movil: agrupa por mes desde el primer dato que
+ * exista.
+ */
+export const RANGOS = ["dia", "semana", "mes", "anio", "total"] as const;
+export type Rango = (typeof RANGOS)[number];
+
+export const RANGO_POR_DEFECTO: Rango = "mes";
+
+/** El `rango` de la URL, o el default si viene cualquier cosa. */
+export const rangoActual = (v: string | undefined): Rango =>
+  RANGOS.includes(v as Rango) ? (v as Rango) : RANGO_POR_DEFECTO;
+
+/** Un punto de la serie. Todas las metricas del mismo bucket, ya en 0 si no hubo nada. */
+export type PuntoSerie = {
+  /** Inicio del bucket, "YYYY-MM-DD". La unidad la da `Estadisticas.unidad`. */
+  periodo: string;
+  paletas: number;
+  promociones: number;
+  /** Bruto del periodo, en pesos enteros. */
+  ingresos: number;
+  usuarios: number;
+  /** Personas distintas que publicaron, pagaron o promocionaron en el periodo. */
+  activos: number;
+};
+
 export type Estadisticas = {
+  rango: Rango;
+  /** Unidad de los buckets de `serie`, como la usa date_trunc. */
+  unidad: "day" | "week" | "month" | "year";
   paletas: {
     activas: number;
     vencidas: number;
@@ -23,13 +54,9 @@ export type Estadisticas = {
   usuarios: { total: number; baneados: number };
   /** Bruto, en pesos enteros: suma de los pagos aprobados, sin descontar MP. */
   ganancia: number;
-  historico: {
-    /** "YYYY-MM" */
-    mes: string;
-    paletas: number;
-    promociones: number;
-    ingresos: number;
-  }[];
+  /** Promociones del rango abiertas por origen. Las tres claves siempre vienen. */
+  tipos: { premium: number; individual: number; cortesia: number };
+  serie: PuntoSerie[];
 };
 
 export type PublicacionAdmin = {
@@ -73,9 +100,11 @@ export const ESTADOS_PUBLICACION: EstadoPublicacion[] = [
   "eliminada",
 ];
 
-/** Todo el resumen en una RPC: agrupa por mes y PostgREST no hace group by. */
-export async function estadisticasAdmin(): Promise<Estadisticas> {
-  const data = await conReintento(() => admin().rpc("estadisticas_admin"));
+/** Todo el resumen en una RPC: agrupa por periodo y PostgREST no hace group by. */
+export async function estadisticasAdmin(rango: Rango): Promise<Estadisticas> {
+  const data = await conReintento(() =>
+    admin().rpc("estadisticas_admin", { p_rango: rango }),
+  );
   return data as unknown as Estadisticas;
 }
 
