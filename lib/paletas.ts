@@ -64,9 +64,9 @@ export const CLAVES_FILTRO = [
  * llega crudo a la query: se resuelve contra esta lista.
  */
 export const ORDENES = [
+  { valor: "precio-desc", label: "Mayor precio", columna: "precio", asc: false },
   { valor: "recientes", label: "Más recientes", columna: "created_at", asc: false },
   { valor: "precio-asc", label: "Menor precio", columna: "precio", asc: true },
-  { valor: "precio-desc", label: "Mayor precio", columna: "precio", asc: false },
   { valor: "vistas", label: "Más vistas", columna: "visitas", asc: false },
 ] as const;
 
