@@ -5,8 +5,9 @@
 -- asi que la funcion pasa a tomar un rango.
 --
 -- El shape del jsonb cambia: se va `historico` y entran `serie` (la ventana
--- pedida, 5 series) y `tipos` (promociones por origen). lib/admin-db.ts y
--- app/admin/page.tsx cambian en el mismo commit.
+-- pedida, 5 series), `tipos` (promociones por origen) y `duraciones`
+-- (promociones por plan de 15 o 30 dias). lib/admin-db.ts y app/admin/page.tsx
+-- cambian en el mismo commit.
 --
 -- Lo que esta funcion NO puede responder, y por eso no lo intenta: cuanta
 -- gente entra al sitio. La base no guarda visitas de pagina; eso lo mide
@@ -109,6 +110,27 @@ begin
       ) from promociones where desde >= v_desde
     ),
 
+    -- ------------------------------------------------ duracion de la promocion
+    -- Los dos planes que se venden (PLANES en lib/paletas.ts) son de 15 y 30
+    -- dias. La duracion no esta guardada como columna: se deriva de hasta -
+    -- desde, que es exactamente como la escribe registrar_promocion_pagada.
+    --
+    -- 'otras' no es relleno: las premium y las de cortesia las inserta otro
+    -- camino y pueden traer cualquier plazo. Sin ese cajon, la suma de las
+    -- barras no daria el total y el grafico mentiria.
+    'duraciones', (
+      select jsonb_build_object(
+        'd15',   count(*) filter (where dias = 15),
+        'd30',   count(*) filter (where dias = 30),
+        'otras', count(*) filter (where dias not in (15, 30))
+      ) from (
+        -- round y no trunc: 30 dias de calendario pueden dar 29.96 si en el
+        -- medio hubo cambio de huso, y truncando eso caeria en 'otras'.
+        select round(extract(epoch from (hasta - desde)) / 86400)::int as dias
+          from promociones where desde >= v_desde
+      ) p
+    ),
+
     -- ---------------------------------------------------------------- serie
     -- generate_series y no group by: un periodo sin actividad tiene que salir
     -- con 0, no desaparecer. Un grafico al que le faltan las barras vacias
@@ -172,6 +194,7 @@ declare
   marca smallint;
   pal   uuid;
   pag   uuid;
+  pag30 uuid;
   e     jsonb;
   ult   jsonb;
   antes jsonb;
@@ -191,12 +214,23 @@ begin
           'CABA', 'CABA', 'test')
   returning id into pal;
 
+  -- Un pago por promocion: promociones_pago_idx es unico, y con razon. Cada
+  -- plan se cobra por separado.
   insert into pagos (perfil_id, mp_payment_id, monto, estado, concepto)
-  values (u_a, 'check-stats-' || u_a::text, 2000, 'aprobado', 'promocion')
+  values (u_a, 'check-stats-15-' || u_a::text, 2000, 'aprobado', 'promocion')
   returning id into pag;
 
-  insert into promociones (paleta_id, origen, pago_id, hasta)
-  values (pal, 'individual', pag, now() + interval '15 days');
+  insert into pagos (perfil_id, mp_payment_id, monto, estado, concepto)
+  values (u_a, 'check-stats-30-' || u_a::text, 3000, 'aprobado', 'promocion')
+  returning id into pag30;
+
+  -- Una de cada plan mas una de cortesia con plazo fuera de los planes: las
+  -- tres barras del grafico de duracion quedan cubiertas, y la de cortesia es
+  -- justo el caso por el que existe el cajon 'otras'.
+  insert into promociones (paleta_id, origen, pago_id, desde, hasta)
+  values (pal, 'individual', pag,   now(), now() + interval '15 days'),
+         (pal, 'individual', pag30, now(), now() + interval '30 days'),
+         (pal, 'cortesia',   null,  now(), now() + interval '7 days');
 
   -- 1. cada rango trae exactamente los buckets que promete, incluidos los vacios
   assert jsonb_array_length(estadisticas_admin('dia')    -> 'serie') = 30,
@@ -233,17 +267,36 @@ begin
 
   -- 4. los tipos de promocion abren por origen y las tres claves estan siempre
   assert (e #>> '{tipos,individual}')::int
-         = (antes #>> '{tipos,individual}')::int + 1,
-    'no conto la promocion individual';
+         = (antes #>> '{tipos,individual}')::int + 2,
+    'no conto las promociones individuales';
+  assert (e #>> '{tipos,cortesia}')::int
+         = (antes #>> '{tipos,cortesia}')::int + 1,
+    'no conto la promocion de cortesia';
   assert (e -> 'tipos') ? 'premium' and (e -> 'tipos') ? 'cortesia',
     'los tres origenes tienen que estar presentes aunque den 0';
 
-  -- 5. los totales no dependen del rango: son de siempre
+  -- 5. la duracion sale de hasta - desde y cada promo cae en su plan
+  assert (e #>> '{duraciones,d15}')::int = (antes #>> '{duraciones,d15}')::int + 1,
+    'la promocion de 15 dias no cayo en su plan';
+  assert (e #>> '{duraciones,d30}')::int = (antes #>> '{duraciones,d30}')::int + 1,
+    'la promocion de 30 dias no cayo en su plan';
+  assert (e #>> '{duraciones,otras}')::int = (antes #>> '{duraciones,otras}')::int + 1,
+    'una promocion de plazo distinto tendria que caer en otras';
+
+  -- Lo que importa de verdad: las dos aperturas cuentan las mismas promos. Si
+  -- un plazo nuevo no entra en ningun cajon, esto lo agarra.
+  assert (e #>> '{duraciones,d15}')::int + (e #>> '{duraciones,d30}')::int
+         + (e #>> '{duraciones,otras}')::int
+         = (e #>> '{tipos,premium}')::int + (e #>> '{tipos,individual}')::int
+         + (e #>> '{tipos,cortesia}')::int,
+    'las dos aperturas de promociones tendrian que sumar lo mismo';
+
+  -- 6. los totales no dependen del rango: son de siempre
   assert (estadisticas_admin('dia') -> 'paletas')
          = (estadisticas_admin('anio') -> 'paletas'),
     'los totales no tendrian que cambiar con el rango';
 
-  -- 6. un rango que no existe falla en vez de devolver cualquier cosa
+  -- 7. un rango que no existe falla en vez de devolver cualquier cosa
   ok := false;
   begin
     perform estadisticas_admin('quincenal');
@@ -251,7 +304,7 @@ begin
   end;
   assert ok, 'un rango invalido tendria que fallar';
 
-  -- 7. lo que no puede pasar: que anon o authenticated lleguen a esto
+  -- 8. lo que no puede pasar: que anon o authenticated lleguen a esto
   assert not has_function_privilege('anon', 'public.estadisticas_admin(text)', 'execute'),
     'anon no puede ejecutar estadisticas_admin';
   assert not has_function_privilege('authenticated', 'public.estadisticas_admin(text)', 'execute'),

@@ -56,6 +56,12 @@ export type Estadisticas = {
   ganancia: number;
   /** Promociones del rango abiertas por origen. Las tres claves siempre vienen. */
   tipos: { premium: number; individual: number; cortesia: number };
+  /**
+   * Las mismas promociones abiertas por plan. `otras` junta todo lo que no es
+   * 15 ni 30 dias: premium y cortesia entran por otro camino y pueden traer
+   * cualquier plazo. Suma lo mismo que `tipos`.
+   */
+  duraciones: { d15: number; d30: number; otras: number };
   serie: PuntoSerie[];
 };
 

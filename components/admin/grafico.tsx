@@ -202,22 +202,71 @@ export function GraficoSerie({
 }
 
 /**
- * Promociones por origen. Categorico, no temporal: barras horizontales, que es
- * lo unico que deja leer las etiquetas completas en un celular.
+ * Los tres colores salen del validador de la skill dataviz (verde de marca +
+ * azul + violeta): pasan separacion para daltonismo y contraste 3:1 sobre
+ * blanco. No cambiarlos de a uno sin volver a validar el trio.
  *
- * Los colores salen del validador de la skill dataviz (verde de marca + azul +
- * violeta): pasan separacion para daltonismo y contraste 3:1 sobre blanco. No
- * cambiarlos de a uno sin volver a validar el trio.
+ * Cada grafico es su propio espacio de identidad, asi que los mismos tres se
+ * reusan en tipos y en duraciones sin que se confundan entre si.
  */
-const TIPOS = [
-  { clave: "premium", texto: "Premium (crédito de suscripción)", color: "#057305" },
-  { clave: "individual", texto: "Individual (pago suelto)", color: "#2a78d6" },
-  { clave: "cortesia", texto: "Cortesía (gratis)", color: "#4a3aa7" },
-] as const;
+const COLORES = ["#057305", "#2a78d6", "#4a3aa7"] as const;
 
+/** Promociones del rango abiertas por origen. */
 export function GraficoTipos({ tipos }: { tipos: Estadisticas["tipos"] }) {
-  const total = TIPOS.reduce((a, t) => a + tipos[t.clave], 0);
-  const max = Math.max(...TIPOS.map((t) => tipos[t.clave]), 1);
+  return (
+    <GraficoDesglose
+      titulo="Promociones por tipo"
+      vacio="Nadie promocionó una publicación en este período."
+      filas={[
+        { texto: "Premium (crédito de suscripción)", valor: tipos.premium },
+        { texto: "Individual (pago suelto)", valor: tipos.individual },
+        { texto: "Cortesía (gratis)", valor: tipos.cortesia },
+      ]}
+    />
+  );
+}
+
+/**
+ * Las mismas promociones abiertas por plan. Son dos graficos y no uno cruzado
+ * de seis barras: origen x duracion se lee peor y no responde ninguna de las
+ * dos preguntas de corrido.
+ */
+export function GraficoDuraciones({
+  duraciones,
+}: {
+  duraciones: Estadisticas["duraciones"];
+}) {
+  return (
+    <GraficoDesglose
+      titulo="Promociones por duración"
+      vacio="Nadie promocionó una publicación en este período."
+      filas={[
+        { texto: "15 días", valor: duraciones.d15 },
+        { texto: "30 días", valor: duraciones.d30 },
+        // Premium y cortesia no pasan por los planes, asi que su plazo puede
+        // ser cualquiera. Sin esta fila las barras no sumarian el total.
+        { texto: "Otra duración", valor: duraciones.otras },
+      ]}
+    />
+  );
+}
+
+/**
+ * Desglose categorico: barras horizontales, que es lo unico que deja leer las
+ * etiquetas completas en un celular. Maximo tres filas, que es hasta donde
+ * llega el trio de colores validado.
+ */
+function GraficoDesglose({
+  titulo,
+  vacio,
+  filas,
+}: {
+  titulo: string;
+  vacio: string;
+  filas: { texto: string; valor: number }[];
+}) {
+  const total = filas.reduce((a, f) => a + f.valor, 0);
+  const max = Math.max(...filas.map((f) => f.valor), 1);
 
   return (
     <figure
@@ -226,7 +275,7 @@ export function GraficoTipos({ tipos }: { tipos: Estadisticas["tipos"] }) {
     >
       <figcaption>
         <h3 className="text-[13px]" style={{ color: TENUE }}>
-          Promociones por tipo
+          {titulo}
         </h3>
         <p className="mt-0.5 text-[22px]" style={{ color: VERDE, fontWeight: 800 }}>
           {numero(total)}
@@ -234,43 +283,40 @@ export function GraficoTipos({ tipos }: { tipos: Estadisticas["tipos"] }) {
       </figcaption>
 
       {total === 0 ? (
-        <Vacio>Nadie promocionó una publicación en este período.</Vacio>
+        <Vacio>{vacio}</Vacio>
       ) : (
         // Cada fila lleva su nombre y su numero escritos: la identidad nunca
         // depende del color solo.
         <dl className="mt-3 space-y-3">
-          {TIPOS.map(({ clave, texto, color }) => {
-            const n = tipos[clave];
-            return (
-              <div key={clave}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <dt className="text-[13px]" style={{ color: TINTA }}>
-                    {texto}
-                  </dt>
-                  <dd
-                    className="shrink-0 text-[13px] tabular-nums"
-                    style={{ color: TINTA, fontWeight: 600 }}
-                  >
-                    {numero(n)}
-                    <span style={{ color: TENUE, fontWeight: 400 }}>
-                      {" "}
-                      ({Math.round((n / total) * 100)}%)
-                    </span>
-                  </dd>
-                </div>
-                <span
-                  aria-hidden
-                  className="mt-1 block h-2 w-full overflow-hidden rounded-full"
-                  style={{ background: "#F2F1ED" }}
+          {filas.map(({ texto, valor }, i) => (
+            <div key={texto}>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-[13px]" style={{ color: TINTA }}>
+                  {texto}
+                </dt>
+                <dd
+                  className="shrink-0 text-[13px] tabular-nums"
+                  style={{ color: TINTA, fontWeight: 600 }}
                 >
-                  <span
-                    className="block h-2 rounded-full"
-                    style={{ width: `${(n / max) * 100}%`, background: color }}
-                  />
-                </span>
+                  {numero(valor)}
+                  <span style={{ color: TENUE, fontWeight: 400 }}>
+                    {" "}
+                    ({Math.round((valor / total) * 100)}%)
+                  </span>
+                </dd>
               </div>
-            );
-          })}
+              <span
+                aria-hidden
+                className="mt-1 block h-2 w-full overflow-hidden rounded-full"
+                style={{ background: "#F2F1ED" }}
+              >
+                <span
+                  className="block h-2 rounded-full"
+                  style={{ width: `${(valor / max) * 100}%`, background: COLORES[i] }}
+                />
+              </span>
+            </div>
+          ))}
         </dl>
       )}
     </figure>

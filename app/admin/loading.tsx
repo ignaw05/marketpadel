@@ -15,7 +15,7 @@ export default function Loading() {
       <div className="h-[44px] animate-pulse rounded-[14px]" style={{ background: "#F2F1ED" }} />
 
       <div className="grid gap-3 md:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 7 }).map((_, i) => (
           <div
             key={i}
             className="h-[280px] animate-pulse rounded-[14px]"

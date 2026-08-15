@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Metric } from "@/components/metric";
-import { GraficoSerie, GraficoTipos } from "@/components/admin/grafico";
+import {
+  GraficoSerie,
+  GraficoTipos,
+  GraficoDuraciones,
+} from "@/components/admin/grafico";
 import {
   estadisticasAdmin,
   rangoActual,
@@ -179,6 +183,7 @@ export default async function Page({
           campo="promociones"
         />
         <GraficoTipos tipos={e.tipos} />
+        <GraficoDuraciones duraciones={e.duraciones} />
         <GraficoSerie
           titulo="Usuarios nuevos"
           datos={e.serie}
