@@ -1,99 +1,126 @@
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { Metric } from "@/components/metric";
-import { estadisticasAdmin, type Estadisticas } from "@/lib/admin-db";
+import {
+  GraficoSerie,
+  GraficoTipos,
+  GraficoDuraciones,
+} from "@/components/admin/grafico";
+import {
+  estadisticasAdmin,
+  rangoActual,
+  RANGOS,
+  type Rango,
+} from "@/lib/admin-db";
 import { formatPrecio } from "@/lib/paletas";
-
-const MES = new Intl.DateTimeFormat("es-AR", { month: "short", year: "2-digit" });
-
-/** "2026-08" -> "ago 26". El dia 1 a mediodia para que no se corra de mes. */
-const nombreMes = (mes: string) => MES.format(new Date(`${mes}-01T12:00:00`));
 
 const numero = (n: number) => n.toLocaleString("es-AR");
 
+const ETIQUETA_RANGO: Record<Rango, string> = {
+  dia: "Diario",
+  semana: "Semanal",
+  mes: "Mensual",
+  anio: "Anual",
+  total: "Total",
+};
+
+/** Que ventana mira cada rango. Va debajo del selector para que el eje no sorprenda. */
+const VENTANA: Record<Rango, string> = {
+  dia: "Últimos 30 días, un punto por día.",
+  semana: "Últimas 12 semanas, un punto por semana.",
+  mes: "Últimos 12 meses, un punto por mes.",
+  anio: "Últimos 5 años, un punto por año.",
+  total: "Todo el historial, un punto por mes.",
+};
+
 /**
- * Barra proporcional debajo del numero. El dato real es el numero: la barra es
- * decorativa y va aria-hidden, si no el lector de pantalla lee ruido.
+ * El rango vive en la URL y no en un useState: asi el back del navegador
+ * funciona, el link se puede compartir y la pantalla sigue siendo un Server
+ * Component. Son <Link>, no botones: cambian de pagina.
  */
-function Barra({ valor, max }: { valor: number; max: number }) {
-  const ancho = max > 0 ? (valor / max) * 100 : 0;
+function SelectorRango({ actual }: { actual: Rango }) {
   return (
-    <span
-      aria-hidden
-      className="mt-1 block h-1 w-full overflow-hidden rounded-full"
-      style={{ background: "#F2F1ED" }}
-    >
-      <span
-        className="block h-1 rounded-full"
-        style={{ width: `${ancho}%`, background: "#057305" }}
-      />
-    </span>
+    <nav aria-label="Rango del resumen" className="flex gap-2 overflow-x-auto">
+      {RANGOS.map((r) => {
+        const activo = r === actual;
+        return (
+          <Link
+            key={r}
+            href={`/admin?rango=${r}`}
+            aria-current={activo ? "true" : undefined}
+            className="flex min-h-[44px] shrink-0 items-center rounded-[14px] px-4 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{
+              background: activo ? "#057305" : "#FFFFFF",
+              border: `1px solid ${activo ? "#057305" : "#E6E4DF"}`,
+              color: activo ? "#FFFFFF" : "#14171A",
+              fontWeight: 600,
+              outlineColor: "#057305",
+            }}
+          >
+            {ETIQUETA_RANGO[r]}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 
 /**
- * ponytail: una <table> con barritas, sin libreria de graficos. No hay ninguna
- * instalada y para 12 filas x 3 series una tabla se lee mejor en un celular
- * que un grafico apretado, ademas de ser accesible sin trabajo extra.
+ * Visitas al sitio. No hay grafico porque no hay dato: la base no guarda
+ * pageviews. @vercel/analytics ya los mide, asi que el panel manda al lugar
+ * donde estan en vez de duplicar el tracking.
+ *
+ * VERCEL_ANALYTICS_URL es el link directo al proyecto
+ * (vercel.com/<equipo>/<proyecto>/analytics). Sin la variable, al dashboard.
  */
-function Historico({ filas }: { filas: Estadisticas["historico"] }) {
-  const maxPaletas = Math.max(...filas.map((f) => f.paletas), 1);
-  const maxPromos = Math.max(...filas.map((f) => f.promociones), 1);
-  const maxIngresos = Math.max(...filas.map((f) => f.ingresos), 1);
+function Visitas() {
+  const url = process.env.VERCEL_ANALYTICS_URL ?? "https://vercel.com/dashboard";
 
   return (
     <div
-      className="overflow-x-auto rounded-[14px]"
+      className="rounded-[14px] p-4"
       style={{ background: "#FFFFFF", border: "1px solid #E6E4DF" }}
     >
-      <table className="w-full text-[13px]">
-        <caption className="px-4 pt-4 text-left text-[13px]" style={{ color: "#5B6470" }}>
-          Últimos 12 meses
-        </caption>
-        <thead>
-          <tr style={{ color: "#5B6470" }}>
-            <th scope="col" className="px-4 py-2 text-left font-semibold">Mes</th>
-            <th scope="col" className="px-3 py-2 text-right font-semibold">Paletas</th>
-            <th scope="col" className="px-3 py-2 text-right font-semibold">Promos</th>
-            <th scope="col" className="px-4 py-2 text-right font-semibold">Ingresos</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filas.map((f) => (
-            <tr key={f.mes} style={{ borderTop: "1px solid #E6E4DF" }}>
-              <th
-                scope="row"
-                className="whitespace-nowrap px-4 py-2.5 text-left font-normal"
-                style={{ color: "#14171A" }}
-              >
-                {nombreMes(f.mes)}
-              </th>
-              <td className="px-3 py-2.5 text-right" style={{ color: "#14171A" }}>
-                {numero(f.paletas)}
-                <Barra valor={f.paletas} max={maxPaletas} />
-              </td>
-              <td className="px-3 py-2.5 text-right" style={{ color: "#14171A" }}>
-                {numero(f.promociones)}
-                <Barra valor={f.promociones} max={maxPromos} />
-              </td>
-              <td
-                className="whitespace-nowrap px-4 py-2.5 text-right"
-                style={{ color: "#057305", fontWeight: 600 }}
-              >
-                {formatPrecio(f.ingresos)}
-                <Barra valor={f.ingresos} max={maxIngresos} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h3 className="text-[13px]" style={{ color: "#5B6470" }}>
+        Visitas al sitio
+      </h3>
+      <p className="mt-1 text-[14px]" style={{ color: "#14171A" }}>
+        Cuánta gente entra a la página lo mide Vercel Analytics, no esta base.
+        Ahí están visitantes únicos, páginas vistas y de dónde vienen, con el
+        mismo corte por día, semana y mes.
+      </p>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] px-4 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #057305",
+          color: "#057305",
+          fontWeight: 600,
+          outlineColor: "#057305",
+        }}
+      >
+        Abrir Vercel Analytics
+        <ExternalLink size={15} aria-hidden />
+        <span className="sr-only">(se abre en una pestaña nueva)</span>
+      </a>
     </div>
   );
 }
 
-export default async function Page() {
-  const e = await estadisticasAdmin();
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ rango?: string }>;
+}) {
+  const rango = rangoActual((await searchParams).rango);
+  const e = await estadisticasAdmin(rango);
 
   return (
     <div className="space-y-6">
+      {/* Totales de siempre: no dependen del rango, por eso van arriba del selector. */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Metric
           label="Ganancia total"
@@ -127,7 +154,52 @@ export default async function Page() {
         />
       </div>
 
-      <Historico filas={e.historico} />
+      <div>
+        <SelectorRango actual={rango} />
+        <p className="mt-2 text-[13px]" style={{ color: "#5B6470" }}>
+          {VENTANA[rango]}
+        </p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <GraficoSerie
+          titulo="Publicaciones nuevas"
+          datos={e.serie}
+          unidad={e.unidad}
+          campo="paletas"
+        />
+        <GraficoSerie
+          titulo="Ingresos"
+          datos={e.serie}
+          unidad={e.unidad}
+          campo="ingresos"
+          moneda
+          nota="Bruto de los pagos aprobados, sin descontar MercadoPago."
+        />
+        <GraficoSerie
+          titulo="Promociones"
+          datos={e.serie}
+          unidad={e.unidad}
+          campo="promociones"
+        />
+        <GraficoTipos tipos={e.tipos} />
+        <GraficoDuraciones duraciones={e.duraciones} />
+        <GraficoSerie
+          titulo="Usuarios nuevos"
+          datos={e.serie}
+          unidad={e.unidad}
+          campo="usuarios"
+        />
+        <GraficoSerie
+          titulo="Usuarios activos"
+          datos={e.serie}
+          unidad={e.unidad}
+          campo="activos"
+          nota="Personas distintas que publicaron, pagaron o promocionaron. No cuenta las que solo miran."
+        />
+      </div>
+
+      <Visitas />
     </div>
   );
 }
