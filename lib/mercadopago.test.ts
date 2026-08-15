@@ -102,9 +102,9 @@ test("el monto cobrado tiene que coincidir con el plan de esos dias", () => {
   const coincide = (dias: number, monto: number) =>
     monto === PLANES.find((p) => p.dias === dias)?.precio;
 
-  expect(coincide(15, 2000)).toBe(true);
-  expect(coincide(30, 3000)).toBe(true);
-  expect(coincide(30, 2000)).toBe(false); // pago los 15 dias, pide los 30
+  expect(coincide(15, 3000)).toBe(true);
+  expect(coincide(30, 4000)).toBe(true);
+  expect(coincide(30, 3000)).toBe(false); // pago los 15 dias, pide los 30
   expect(coincide(15, 1)).toBe(false);
-  expect(coincide(60, 3000)).toBe(false); // dias que no son de ningun plan
+  expect(coincide(60, 4000)).toBe(false); // dias que no son de ningun plan
 });
