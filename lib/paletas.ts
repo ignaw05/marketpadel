@@ -175,8 +175,8 @@ export const foto = (p: Pick<Paleta, "fotos">): string => p.fotos[0] ?? "";
 
 /** Lo que se le cobra al vendedor por aparecer primero en las busquedas. */
 export const PLANES = [
-  { dias: 15, precio: 2000, precioAntes: 4000 },
-  { dias: 30, precio: 3000, precioAntes: 6000 },
+  { dias: 15, precio: 3000, precioAntes: 6000 },
+  { dias: 30, precio: 4000, precioAntes: 8000 },
 ];
 
 /** Misma regla que el `exists` de la vista paletas_publicas: alcanza con una vigente. */

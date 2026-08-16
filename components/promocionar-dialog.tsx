@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowUpNarrowWide, Clock, CreditCard, Star, TrendingUp } from "lucide-react";
+import { ArrowUpNarrowWide, Clock, CreditCard, Megaphone, MessagesSquare, Star, TrendingUp } from "lucide-react";
 import { promocionar } from "@/app/(main)/mis-publicaciones/actions";
 import { PLANES, formatPrecio } from "@/lib/paletas";
 
@@ -100,6 +100,14 @@ export function PromocionarDialog({
           <li className="flex gap-2">
             <Star size={16} className="mt-px shrink-0" style={{ color: LIMA }} aria-hidden />
             Lleva el distintivo “Destacada” sobre la foto.
+          </li>
+          <li className="flex gap-2">
+            <Megaphone size={16} className="mt-px shrink-0" style={{ color: LIMA }} aria-hidden />
+            La promocionamos en Instagram @paletita.ar, 3 a 5 veces por semana.
+          </li>
+          <li className="flex gap-2">
+            <MessagesSquare size={16} className="mt-px shrink-0" style={{ color: LIMA }} aria-hidden />
+            También la difundimos en grupos de pádel.
           </li>
           <li className="flex gap-2">
             <TrendingUp size={16} className="mt-px shrink-0" style={{ color: LIMA }} aria-hidden />
