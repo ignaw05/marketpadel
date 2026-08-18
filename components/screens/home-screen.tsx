@@ -4,6 +4,7 @@ import { SearchX, PackageOpen, Plus } from "lucide-react";
 import { PaletaCard } from "../paleta-card";
 import { Filtros } from "../filtros";
 import { Paginacion } from "../paginacion";
+import { Actividad } from "../actividad";
 import { CLAVES_FILTRO, type Paleta, type FiltrosFeed } from "@/lib/paletas";
 
 function SinResultados() {
@@ -117,6 +118,8 @@ export function HomeScreen({
           </>
         )}
       </div>
+
+      <Actividad />
     </div>
   );
 }
