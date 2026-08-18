@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({
@@ -45,6 +46,14 @@ export default function RootLayout({
         {children}
         <Toaster position="top-center" toastOptions={{ style: { borderRadius: "14px" } }} />
         <Analytics />
+        {/* Google Analytics. next/script lo carga despues de hidratar, no bloquea el LCP. */}
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-SWDVMDHFYH" />
+        <Script id="gtag">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-SWDVMDHFYH');
+        `}</Script>
       </body>
     </html>
   );
