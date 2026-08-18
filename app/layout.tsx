@@ -10,9 +10,28 @@ const inter = Inter({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const TITULO = "Paletita — Paletas de pádel usadas en Argentina";
+const DESCRIPCION =
+  "Paletita es el mercado de paletas de pádel usadas en Argentina. Comprá y vendé paletas Bullpadel, Adidas, Head, Nox, Siux y más entre jugadores, con contacto directo por WhatsApp.";
+
 export const metadata: Metadata = {
-  title: "Paletita",
-  description: "Comprá y vendé paletas de pádel usadas entre jugadores en Argentina.",
+  // Sin metadataBase, todo og:image y canonical relativo sale como ruta suelta
+  // y Google los descarta.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
+  title: { default: TITULO, template: "%s | Paletita" },
+  description: DESCRIPCION,
+  applicationName: "Paletita",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    siteName: "Paletita",
+    url: "/",
+    title: TITULO,
+    description: DESCRIPCION,
+  },
+  twitter: { card: "summary_large_image", title: TITULO, description: DESCRIPCION },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
@@ -21,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} h-full`}>
+    <html lang="es-AR" className={`${inter.variable} h-full`}>
       <body className="min-h-full" style={{ background: "#FAFAF8", color: "#14171A" }}>
         {children}
         <Toaster position="top-center" toastOptions={{ style: { borderRadius: "14px" } }} />
