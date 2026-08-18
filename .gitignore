@@ -43,3 +43,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Skills vendorizadas por autoskills: se reinstalan desde skills-lock.json.
+.agents/

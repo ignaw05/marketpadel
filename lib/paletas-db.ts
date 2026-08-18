@@ -1,4 +1,5 @@
 // Solo servidor: usa next/headers via lib/supabase/server.
+import { cache } from "react";
 import { createClient, clientePublico } from "@/lib/supabase/server";
 import {
   ESTADOS,
@@ -72,7 +73,13 @@ export async function listarPaletas(
   return { paletas: filas.slice(0, POR_PAGINA), hayMas: filas.length > POR_PAGINA };
 }
 
-export async function obtenerPaleta(
+/**
+ * generateMetadata y el propio Server Component piden la misma paleta en el
+ * mismo request: sin cache() eso son dos viajes a la base por cada detalle.
+ */
+export const obtenerPaleta = cache(obtenerPaletaDb);
+
+async function obtenerPaletaDb(
   id: string,
 ): Promise<{ paleta: Paleta; vendedor: Vendedor } | null> {
   const supabase = clientePublico();
@@ -190,4 +197,17 @@ export async function listarCiudades(): Promise<string[]> {
   return [...new Set((data ?? []).map((r) => r.ciudad))].sort((a, b) =>
     a.localeCompare(b, "es-AR"),
   );
+}
+
+/** Solo para el sitemap: id y fecha de cada publicacion viva. */
+export async function listarIdsPublicos(): Promise<{ id: string; created_at: string }[]> {
+  const supabase = clientePublico();
+
+  // ponytail: un sitemap es de hasta 50.000 URLs. Pasado eso, hay que partirlo
+  // en varios con generateSitemaps().
+  const data = await conReintento(() =>
+    supabase.from("paletas_publicas").select("id, created_at").limit(5000),
+  );
+
+  return data ?? [];
 }

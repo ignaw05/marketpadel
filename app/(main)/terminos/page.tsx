@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Términos y condiciones | Paletita",
+  title: "Términos y condiciones",
+  alternates: { canonical: "/terminos" },
   description:
     "Paletita conecta compradores y vendedores de paletas de pádel. No participa de las ventas ni es responsable por ellas.",
 };
