@@ -4,13 +4,13 @@
     {
       "source": "/",
       "has": [{ "type": "host", "value": "paletita.vercel.app" }],
-      "destination": "https://paletita.com.ar/",
+      "destination": "https://www.paletita.com.ar/",
       "permanent": true
     },
     {
       "source": "/:path((?!api/).*)",
       "has": [{ "type": "host", "value": "paletita.vercel.app" }],
-      "destination": "https://paletita.com.ar/:path",
+      "destination": "https://www.paletita.com.ar/:path",
       "permanent": true
     }
   ]
