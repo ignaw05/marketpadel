@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { destinoSeguro } from "@/lib/validar";
+import { requiereSesion } from "@/lib/acceso";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -27,10 +28,9 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const PRIVADAS = ["/publicar", "/mis-publicaciones", "/editar"];
   const { pathname, search } = request.nextUrl;
 
-  if (!user && PRIVADAS.some((p) => pathname.startsWith(p))) {
+  if (!user && requiereSesion(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth";
     url.search = `?next=${encodeURIComponent(pathname + search)}`;
