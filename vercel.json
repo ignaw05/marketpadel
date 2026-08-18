@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "paletita.vercel.app" }],
+      "destination": "https://paletita.com.ar/",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!api/).*)",
+      "has": [{ "type": "host", "value": "paletita.vercel.app" }],
+      "destination": "https://paletita.com.ar/:path",
+      "permanent": true
+    }
+  ]
+}
