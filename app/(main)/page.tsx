@@ -1,6 +1,53 @@
+import type { Metadata } from "next";
 import { HomeScreen } from "@/components/screens/home-screen";
 import { listarPaletas, listarMarcas, listarCiudades } from "@/lib/paletas-db";
-import { paginaActual, type FiltrosFeed } from "@/lib/paletas";
+import {
+  canonicaFeed,
+  paginaActual,
+  tituloFeed,
+  type FiltrosFeed,
+} from "@/lib/paletas";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<FiltrosFeed>;
+}): Promise<Metadata> {
+  const filtros = await searchParams;
+  const { path, indexable } = canonicaFeed(filtros);
+  const titulo = tituloFeed(filtros);
+
+  // Solo la inicial en minuscula: un toLowerCase() entero se come Bullpadel,
+  // Córdoba y Argentina, que son justo las palabras que se buscan.
+  const descripcion = `Comprá y vendé ${titulo[0].toLowerCase()}${titulo.slice(
+    1,
+  )}. Publicar es gratis, hablás directo con el vendedor por WhatsApp y ves el estado real de cada paleta antes de comprar.`;
+
+  return {
+    // El template del layout ya agrega "| Paletita": ponerlo aca lo duplica.
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical: path },
+    // follow: las fichas linkeadas desde una faceta que no se indexa se
+    // rastrean igual, que es todo lo que se le pide a esas URLs.
+    robots: indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
+    // openGraph pisa entero al del layout, no lo completa: lo que no se
+    // repita aca se pierde, imagen incluida.
+    openGraph: {
+      type: "website",
+      locale: "es_AR",
+      siteName: "Paletita",
+      url: path,
+      title: `${titulo} | Paletita`,
+      description: descripcion,
+      // app/opengraph-image.tsx solo se hereda solo cuando la pagina no
+      // declara openGraph: como esta lo declara, hay que nombrarla.
+      images: ["/opengraph-image"],
+    },
+  };
+}
 
 export default async function Page({
   searchParams,
@@ -15,14 +62,44 @@ export default async function Page({
     listarCiudades(),
   ]);
 
+  const sitio = process.env.NEXT_PUBLIC_BASE_URL!;
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Paletita",
+    alternateName: "Paletita — paletas de pádel usadas",
+    url: sitio,
+    inLanguage: "es-AR",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${sitio}/?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Paletita",
+      url: sitio,
+      logo: `${sitio}/logo.png`,
+    },
+  };
+
   return (
-    <HomeScreen
-      paletas={paletas}
-      marcas={marcas.map((m) => m.nombre)}
-      ciudades={ciudades}
-      filtros={filtros}
-      pagina={paginaActual(filtros.pagina)}
-      hayMas={hayMas}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+      />
+      <HomeScreen
+        paletas={paletas}
+        marcas={marcas.map((m) => m.nombre)}
+        ciudades={ciudades}
+        filtros={filtros}
+        pagina={paginaActual(filtros.pagina)}
+        hayMas={hayMas}
+      />
+    </>
   );
 }

@@ -5,7 +5,12 @@ import { PaletaCard } from "../paleta-card";
 import { Filtros } from "../filtros";
 import { Paginacion } from "../paginacion";
 import { Actividad } from "../actividad";
-import { CLAVES_FILTRO, type Paleta, type FiltrosFeed } from "@/lib/paletas";
+import {
+  CLAVES_FILTRO,
+  tituloFeed,
+  type Paleta,
+  type FiltrosFeed,
+} from "@/lib/paletas";
 
 function SinResultados() {
   return (
@@ -16,7 +21,10 @@ function SinResultados() {
       >
         <SearchX size={28} style={{ color: "#5B6470" }} aria-hidden />
       </div>
-      <p className="mt-4 text-[16px]" style={{ color: "#14171A", fontWeight: 600 }}>
+      <p
+        className="mt-4 text-[16px]"
+        style={{ color: "#14171A", fontWeight: 600 }}
+      >
         No encontramos paletas
       </p>
       <p className="mt-1 text-[14px]" style={{ color: "#5B6470" }}>
@@ -51,7 +59,10 @@ function TodavíaNoHayNada() {
       >
         <PackageOpen size={28} style={{ color: "#057305" }} aria-hidden />
       </div>
-      <p className="mt-4 text-[16px]" style={{ color: "#14171A", fontWeight: 600 }}>
+      <p
+        className="mt-4 text-[16px]"
+        style={{ color: "#14171A", fontWeight: 600 }}
+      >
         Todavía no hay paletas publicadas
       </p>
       <p className="mt-1 text-[14px]" style={{ color: "#5B6470" }}>
@@ -60,7 +71,11 @@ function TodavíaNoHayNada() {
       <Link
         href="/publicar"
         className="mt-5 flex min-h-[44px] items-center gap-2 rounded-[14px] px-4 py-2.5 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
+        style={{
+          background: "#057305",
+          fontWeight: 600,
+          outlineColor: "#057305",
+        }}
       >
         <Plus size={16} aria-hidden /> Publicar una paleta
       </Link>
@@ -93,33 +108,58 @@ export function HomeScreen({
   const buscando = CLAVES_FILTRO.some((k) => filtros[k]) || pagina > 1;
 
   return (
-    <div className="mx-auto flex max-w-[1280px] flex-col px-4 py-5 md:flex-row md:gap-8 md:px-6">
-      <aside className="md:w-[220px] md:shrink-0">
-        <Suspense fallback={<div className="mb-5 h-[44px] md:h-[320px]" />}>
-          <Filtros marcas={marcas} ciudades={ciudades} />
-        </Suspense>
-      </aside>
+    <div className="mx-auto max-w-[1280px] px-4 py-5 md:px-6">
+      {/* Unico h1 de la home. Sin esto la portada no tiene una sola linea de
+          texto propio: es una grilla de fotos y nada mas. */}
+      <header className="mb-4">
+        <h1
+          className="text-[20px] md:text-[26px]"
+          style={{
+            color: "#14171A",
+            fontWeight: 800,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {tituloFeed(filtros)}
+        </h1>
+        <p
+          className="mt-1 max-w-[70ch] text-[14px] leading-relaxed"
+          style={{ color: "#5B6470" }}
+        >
+          Comprá y vendé paletas de pádel usadas entre jugadores. Publicar es
+          gratis, ves el estado real de cada paleta y hablás directo con el
+          vendedor por WhatsApp.
+        </p>
+      </header>
 
-      <div className="min-w-0 flex-1">
-        {paletas.length === 0 ? (
-          buscando ? (
-            <SinResultados />
+      <div className="flex flex-col md:flex-row md:gap-8">
+        <aside className="md:w-[220px] md:shrink-0">
+          <Suspense fallback={<div className="mb-5 h-[44px] md:h-[320px]" />}>
+            <Filtros marcas={marcas} ciudades={ciudades} />
+          </Suspense>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          {paletas.length === 0 ? (
+            buscando ? (
+              <SinResultados />
+            ) : (
+              <TodavíaNoHayNada />
+            )
           ) : (
-            <TodavíaNoHayNada />
-          )
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-              {paletas.map((p, i) => (
-                <PaletaCard key={p.id} paleta={p} priority={i < 4} />
-              ))}
-            </div>
-            <Paginacion filtros={filtros} pagina={pagina} hayMas={hayMas} />
-          </>
-        )}
-      </div>
+            <>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                {paletas.map((p, i) => (
+                  <PaletaCard key={p.id} paleta={p} priority={i < 4} />
+                ))}
+              </div>
+              <Paginacion filtros={filtros} pagina={pagina} hayMas={hayMas} />
+            </>
+          )}
+        </div>
 
-      <Actividad />
+        <Actividad />
+      </div>
     </div>
   );
 }

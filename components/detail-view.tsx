@@ -51,10 +51,14 @@ export function DetailView({
             <Star size={11} aria-hidden /> Destacada
           </p>
         )}
-        <p className="text-[13px]" style={{ color: "#5B6470" }}>
-          {paleta.marca}
-        </p>
-        <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 22 }}>{paleta.modelo}</h1>
+        {/* Marca y modelo dentro del mismo h1: partidos en dos elementos, el
+            titulo de la pagina para un buscador seria solo "Hack 03". */}
+        <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 22 }}>
+          <span className="block text-[13px]" style={{ color: "#5B6470", fontWeight: 400 }}>
+            {paleta.marca}
+          </span>
+          {paleta.modelo}
+        </h1>
         <p className="mt-1 text-[26px]" style={{ color: "#057305", fontWeight: 800 }}>
           {formatPrecio(paleta.precio)}
         </p>
