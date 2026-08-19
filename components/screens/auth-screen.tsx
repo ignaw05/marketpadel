@@ -3,7 +3,6 @@
 import { useActionState, useState } from "react";
 import { KeyRound, MailCheck } from "lucide-react";
 import { Logo } from "../logo";
-import { ImageWithFallback } from "../image-with-fallback";
 import {
   Aviso,
   ErrorCampo,
@@ -25,8 +24,6 @@ import {
 } from "@/app/auth/actions";
 import { PREFIJO_WHATSAPP } from "@/lib/validar";
 
-const COURT_IMG =
-  "https://images.unsplash.com/photo-1646649853517-e2f75cde1908?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200";
 
 /** Prefijo editable al lado del número. Arranca en +54 9. */
 function CampoWhatsapp({
@@ -89,11 +86,13 @@ function CampoWhatsapp({
 function Marco({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2" style={{ background: "#FAFAF8" }}>
+      {/* ponytail: la foto es decorativa y solo se ve en desktop, asi que va como
+          background de CSS y no como <Image>. Dentro de un display:none el
+          navegador no baja un background: en celular no se descarga nada. */}
       <div
         className="relative hidden lg:flex lg:flex-col lg:justify-end lg:p-12"
-        style={{ background: "#F2F1ED" }}
+        style={{ background: "#F2F1ED url(/cancha.webp) center / cover no-repeat" }}
       >
-        <ImageWithFallback src={COURT_IMG} alt="" sizes="50vw" className="object-cover" />
         <div
           className="absolute inset-0"
           style={{
