@@ -68,6 +68,9 @@ export function DetailView({
           <Spec label="Forma" value={paleta.forma} />
           <Spec label="Año" value={String(paleta.anio)} />
           <Spec label="Ubicación" value={`${paleta.ciudad}, ${paleta.provincia}`} />
+          {/* Solo cuando acepta: no aceptar permuta es el caso normal y no es
+              un dato que le sirva a nadie ocupando un casillero. */}
+          {paleta.acepta_permuta && <Spec label="Permuta" value="Acepta" />}
         </div>
 
         <p className="mt-4 text-[15px]" style={{ color: "#14171A", lineHeight: 1.6 }}>

@@ -43,6 +43,10 @@ export async function publicar(
     fotos,
   };
 
+  // Checkbox: presente = marcado. No pasa por validarPaleta porque no hay valor
+  // invalido posible, solo esta o no esta.
+  const aceptaPermuta = fd.get("permuta") !== null;
+
   // Los valores no vuelven: el form los tiene en estado de React, que el
   // reset del <form> no toca.
   const campos = validarPaleta(datos);
@@ -71,6 +75,7 @@ export async function publicar(
     ciudad: datos.ciudad,
     descripcion: datos.descripcion,
     fotos: datos.fotos,
+    acepta_permuta: aceptaPermuta,
   }).select("id").single();
 
   if (error) {

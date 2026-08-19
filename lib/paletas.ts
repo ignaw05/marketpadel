@@ -19,6 +19,7 @@ export type Paleta = {
   descripcion: string;
   fotos: string[];
   visitas: number;
+  acepta_permuta: boolean;
   promocionada?: boolean;
   estado_publicacion?: EstadoPublicacion;
   /** Solo viene en las queries del dueño: la vista publica ya filtra por fecha. */
@@ -49,6 +50,7 @@ export type FiltrosFeed = {
   provincia?: string;
   precioMax?: string;
   estado?: string;
+  permuta?: string;
   orden?: string;
   pagina?: string;
 };
@@ -61,6 +63,7 @@ export const CLAVES_FILTRO = [
   "provincia",
   "precioMax",
   "estado",
+  "permuta",
 ] as const satisfies readonly (keyof FiltrosFeed)[];
 
 /**
@@ -98,7 +101,13 @@ export const canonicaFeed = (f: FiltrosFeed): { path: string; indexable: boolean
 
   return {
     path: qs.size ? `/?${qs}` : "/",
-    indexable: !f.q && !f.forma && !f.precioMax && !f.estado && paginaActual(f.pagina) === 1,
+    indexable:
+      !f.q &&
+      !f.forma &&
+      !f.precioMax &&
+      !f.estado &&
+      !f.permuta &&
+      paginaActual(f.pagina) === 1,
   };
 };
 
@@ -198,6 +207,16 @@ export const ESTADOS = [
   { label: "8+ muy buena", min: 8 },
   { label: "7+ buena", min: 7 },
 ];
+
+/**
+ * Opciones del filtro de permuta. "Todas" no esta en la lista: es no mandar el
+ * parametro, igual que en el resto de los Dropdown.
+ *
+ * Los valores viajan en la URL tal cual se leen, con acento y todo, como ya lo
+ * hace el filtro de estado con sus labels. Cualquier otra cosa en ?permuta= se
+ * ignora en la query: no hay valor libre que llegue crudo a la base.
+ */
+export const PERMUTA = ["S\u00ed", "No"];
 
 export const estadoLabel = (n: number): string => {
   if (n >= 10) return "SIN USO";
