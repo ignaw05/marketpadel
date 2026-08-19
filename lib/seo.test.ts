@@ -7,10 +7,6 @@ test("el titulo del feed nombra la faceta que se esta viendo", () => {
   expect(tituloFeed({})).toBe("Paletas de pádel usadas en Argentina");
   expect(tituloFeed({ marca: "Bullpadel" })).toBe("Paletas de pádel Bullpadel usadas en Argentina");
   expect(tituloFeed({ provincia: "Córdoba" })).toBe("Paletas de pádel usadas en Córdoba");
-  // La ciudad le gana a la provincia: es lo mas especifico que eligio el usuario.
-  expect(tituloFeed({ marca: "Nox", provincia: "Buenos Aires", ciudad: "La Plata" })).toBe(
-    "Paletas de pádel Nox usadas en La Plata",
-  );
 });
 
 test("las facetas de catalogo se indexan y el resto no", () => {
@@ -28,10 +24,10 @@ test("las facetas de catalogo se indexan y el resto no", () => {
   });
 });
 
-// Sin esto, ?ciudad=X&marca=Y y ?marca=Y&ciudad=X compiten entre si.
+// Sin esto, ?provincia=X&marca=Y y ?marca=Y&provincia=X compiten entre si.
 test("el orden de los params no cambia la canonica", () => {
-  const a = canonicaFeed({ marca: "Siux", ciudad: "Rosario" }).path;
-  const b = canonicaFeed({ ciudad: "Rosario", marca: "Siux" }).path;
+  const a = canonicaFeed({ marca: "Siux", provincia: "Santa Fe" }).path;
+  const b = canonicaFeed({ provincia: "Santa Fe", marca: "Siux" }).path;
   expect(a).toBe(b);
-  expect(a).toBe("/?marca=Siux&ciudad=Rosario");
+  expect(a).toBe("/?marca=Siux&provincia=Santa+Fe");
 });

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { HomeScreen } from "@/components/screens/home-screen";
-import { listarPaletas, listarMarcas, listarCiudades } from "@/lib/paletas-db";
+import { listarPaletas, listarMarcas } from "@/lib/paletas-db";
 import {
   canonicaFeed,
   paginaActual,
@@ -57,10 +57,9 @@ export default async function Page({
 }) {
   const filtros = await searchParams;
 
-  const [{ paletas, hayMas }, marcas, ciudades] = await Promise.all([
+  const [{ paletas, hayMas }, marcas] = await Promise.all([
     listarPaletas(filtros),
     listarMarcas(),
-    listarCiudades(),
   ]);
 
   const sitio = process.env.NEXT_PUBLIC_BASE_URL!;
@@ -101,7 +100,6 @@ export default async function Page({
       <HomeScreen
         paletas={paletas}
         marcas={marcas.map((m) => m.nombre)}
-        ciudades={ciudades}
         filtros={filtros}
         pagina={paginaActual(filtros.pagina)}
         hayMas={hayMas}
