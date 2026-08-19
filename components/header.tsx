@@ -6,7 +6,7 @@ import { Search, Plus, LayoutGrid, LogOut, LogIn, UserRound, ArrowLeft } from "l
 import { Logo } from "./logo";
 import { cerrarSesion } from "@/app/auth/actions";
 
-const OTROS_FILTROS = ["marca", "forma", "ciudad", "precioMax", "estado"];
+const OTROS_FILTROS = ["marca", "forma", "precioMax", "estado"];
 
 /** ponytail: SVG inline. lucide-react v1 sacó los iconos de marca, no hay `Instagram`. */
 function IconoInstagram() {

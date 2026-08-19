@@ -62,7 +62,6 @@ export async function listarPaletas(
     if (f.marca) query = query.eq("marca", f.marca);
     if (f.forma) query = query.eq("forma", f.forma);
     if (f.provincia) query = query.eq("provincia", f.provincia);
-    if (f.ciudad) query = query.eq("ciudad", f.ciudad);
 
     if (tope !== null) query = query.lte("precio", tope);
     if (minEstado) query = query.gte("estado", minEstado.min);
@@ -234,20 +233,6 @@ export async function listarMarcas(): Promise<{ id: number; nombre: string }[]> 
   );
 
   return data ?? [];
-}
-
-/** Ciudades con al menos una publicacion activa, para el filtro de ubicacion. */
-export async function listarCiudades(): Promise<string[]> {
-  const supabase = clientePublico();
-
-  // ponytail: distinct en JS sobre el feed. Si crece, una vista materializada.
-  const data = await conReintento(() =>
-    supabase.from("paletas_publicas").select("ciudad").limit(500),
-  );
-
-  return [...new Set((data ?? []).map((r) => r.ciudad))].sort((a, b) =>
-    a.localeCompare(b, "es-AR"),
-  );
 }
 
 /** Solo para el sitemap: id y fecha de cada publicacion viva. */

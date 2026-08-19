@@ -16,7 +16,7 @@ import {
   ordenActual,
 } from "@/lib/paletas";
 
-const CLAVES = ["marca", "forma", "precioMax", "provincia", "ciudad", "estado"];
+const CLAVES = ["marca", "forma", "precioMax", "provincia", "estado"];
 
 /** Arma el href conservando el resto de los filtros y la busqueda. */
 function useHref() {
@@ -238,7 +238,7 @@ function PrecioSlider() {
   );
 }
 
-export function Filtros({ marcas, ciudades }: { marcas: string[]; ciudades: string[] }) {
+export function Filtros({ marcas }: { marcas: string[] }) {
   const params = useSearchParams();
   const activos = CLAVES.filter((k) => params.get(k)).length;
 
@@ -255,7 +255,6 @@ export function Filtros({ marcas, ciudades }: { marcas: string[]; ciudades: stri
       <Dropdown etiqueta="Marca" clave="marca" opciones={marcas} />
       <Dropdown etiqueta="Forma" clave="forma" opciones={[...FORMAS]} />
       <Dropdown etiqueta="Provincia" clave="provincia" opciones={[...PROVINCIAS]} />
-      <Dropdown etiqueta="Ciudad" clave="ciudad" opciones={ciudades} />
       <Dropdown etiqueta="Estado" clave="estado" opciones={ESTADOS.map((e) => e.label)} />
       {/* key: al limpiar filtros o volver atras, el pulgar se reposiciona solo */}
       <PrecioSlider key={params.get("precioMax") ?? ""} />
