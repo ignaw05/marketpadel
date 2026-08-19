@@ -13,7 +13,7 @@ const inter = Inter({
 
 const TITULO = "Paletita — Paletas de pádel usadas en Argentina";
 const DESCRIPCION =
-  "Paletita es el mercado de paletas de pádel usadas en Argentina. Comprá y vendé paletas Bullpadel, Adidas, Head, Nox, Siux y más entre jugadores, con contacto directo por WhatsApp.";
+  "Comprá y vendé paletas de pádel usadas en Argentina: Bullpadel, Adidas, Head, Nox, Siux y más, entre jugadores y con contacto directo por WhatsApp.";
 
 export const metadata: Metadata = {
   // Sin metadataBase, todo og:image y canonical relativo sale como ruta suelta
