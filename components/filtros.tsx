@@ -8,6 +8,7 @@ import {
   FORMAS,
   PROVINCIAS,
   ESTADOS,
+  PERMUTA,
   PRECIO_TOPE,
   PRECIO_PASO,
   ORDENES,
@@ -16,7 +17,7 @@ import {
   ordenActual,
 } from "@/lib/paletas";
 
-const CLAVES = ["marca", "forma", "precioMax", "provincia", "estado"];
+const CLAVES = ["marca", "forma", "precioMax", "provincia", "estado", "permuta"];
 
 /** Arma el href conservando el resto de los filtros y la busqueda. */
 function useHref() {
@@ -54,7 +55,7 @@ function Dropdown({
         type="button"
         onClick={() => setAbierto((o) => !o)}
         aria-expanded={abierto}
-        className="flex min-h-[44px] shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 md:w-full md:justify-between md:rounded-[12px]"
+        className="flex min-h-[44px] shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 md:w-full md:justify-between md:rounded-[10px] md:px-4 md:text-[14px]"
         style={{
           background: valor ? "#057305" : "#FFFFFF",
           color: valor ? "#FFFFFF" : "#14171A",
@@ -120,20 +121,27 @@ function Dropdown({
  * Barra verde con el orden puesto, aparte de los filtros: ordenar no es filtrar
  * y siempre hay uno activo, asi que el control muestra el valor en vez de una
  * etiqueta generica.
+ *
+ * Se exporta porque tiene dos lugares: en mobile va arriba de los chips, al lado
+ * de "Historial de ventas" (lo pone home-screen); en desktop sigue adentro de la
+ * columna de filtros.
  */
-function Orden() {
+export function Orden({ className = "" }: { className?: string }) {
   const [abierto, setAbierto] = useState(false);
   const params = useSearchParams();
   const href = useHref();
   const actual = ordenActual(params.get("orden") ?? undefined);
 
   return (
-    <div className="relative w-full" onKeyDown={(e) => e.key === "Escape" && setAbierto(false)}>
+    <div
+      className={`relative w-full ${className}`}
+      onKeyDown={(e) => e.key === "Escape" && setAbierto(false)}
+    >
       <button
         type="button"
         onClick={() => setAbierto((o) => !o)}
         aria-expanded={abierto}
-        className="flex min-h-[52px] w-full items-center gap-2.5 rounded-[12px] px-3.5 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="flex min-h-[52px] w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-[62px] md:gap-2.5 md:rounded-[10px] md:px-3.5"
         style={{ background: "#057305", color: "#FFFFFF", outlineColor: "#057305" }}
       >
         <ArrowUpDown size={18} aria-hidden style={{ flexShrink: 0 }} />
@@ -211,7 +219,10 @@ function PrecioSlider() {
     });
 
   return (
-    <div className="w-full md:mt-1">
+    // px-3.5/md:px-4: el mismo padding horizontal que los chips, para que
+    // "Precio hasta", "Sin tope" y la barra caigan en la misma columna que
+    // "Marca" y "Forma" y no arranquen 16px antes que el resto del texto.
+    <div className="w-full px-3.5 md:mt-1 md:px-4">
       <div className="flex items-baseline justify-between gap-2">
         <label htmlFor="precioMax" className="text-[13px]" style={{ color: "#14171A", fontWeight: 600 }}>
           Precio hasta
@@ -231,7 +242,10 @@ function PrecioSlider() {
         onChange={(e) => setValor(Number(e.target.value))}
         onPointerUp={aplicar}
         onKeyUp={aplicar}
-        className="h-11 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
+        // -mt-2.5: el input mide 44px de alto (el target tactil) y el navegador
+        // dibuja la barra en el medio, o sea 22px abajo del label. Subirlo 10px
+        // deja el label pegado a la barra sin achicar el area para tocarla.
+        className="-mt-2.5 h-11 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
         style={{ accentColor: "#057305", outlineColor: "#057305" }}
       />
     </div>
@@ -250,12 +264,18 @@ export function Filtros({ marcas }: { marcas: string[] }) {
   }
 
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-2 pb-1 md:mb-0 md:flex-col md:items-stretch md:gap-3">
-      <Orden />
+    <div className="mb-5 flex flex-wrap items-center gap-2 pb-1 md:mb-0 md:flex-col md:items-stretch md:gap-2">
+      {/* En mobile lo renderiza home-screen arriba de todo, junto al historial.
+          mb-3 extra: en la columna el orden se separa mas de los chips (20px)
+          que los chips entre si (8px), como en el mockup de desktop. */}
+      <div className="hidden md:mb-3 md:block">
+        <Orden />
+      </div>
       <Dropdown etiqueta="Marca" clave="marca" opciones={marcas} />
       <Dropdown etiqueta="Forma" clave="forma" opciones={[...FORMAS]} />
       <Dropdown etiqueta="Provincia" clave="provincia" opciones={[...PROVINCIAS]} />
       <Dropdown etiqueta="Estado" clave="estado" opciones={ESTADOS.map((e) => e.label)} />
+      <Dropdown etiqueta="Permuta" clave="permuta" opciones={PERMUTA} />
       {/* key: al limpiar filtros o volver atras, el pulgar se reposiciona solo */}
       <PrecioSlider key={params.get("precioMax") ?? ""} />
 

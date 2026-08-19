@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { SearchX, PackageOpen, Plus, Receipt } from "lucide-react";
 import { PaletaCard } from "../paleta-card";
-import { Filtros } from "../filtros";
+import { Buscador } from "../buscador";
+import { Filtros, Orden } from "../filtros";
 import { Paginacion } from "../paginacion";
 import { Actividad } from "../actividad";
 import { SobrePaletita } from "../sobre-paletita";
@@ -84,6 +85,17 @@ function TodavíaNoHayNada() {
   );
 }
 
+const historialBase =
+  "items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2";
+
+const historialStyle = {
+  background: "#FFFFFF",
+  border: "1px solid #E6E4DF",
+  color: "#14171A",
+  fontWeight: 600,
+  outlineColor: "#057305",
+} as const;
+
 export function HomeScreen({
   paletas,
   marcas,
@@ -107,19 +119,47 @@ export function HomeScreen({
   const buscando = CLAVES_FILTRO.some((k) => filtros[k]) || pagina > 1;
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 py-5 md:px-6">
-      <div className="mb-4 flex justify-end">
+    <div className="mx-auto max-w-[1280px] px-4 py-4 md:px-6">
+      {/* El buscador vive acá desde que salio del header: scrollea con el feed.
+          En desktop comparte fila con el historial; en mobile el historial baja
+          a la fila de abajo, al lado del orden. Suspense porque lee la query. */}
+      <div className="mb-3 flex gap-4 md:mb-5">
+        <Suspense fallback={<div className="h-[48px] min-w-0 flex-1 md:h-[63px]" />}>
+          <Buscador className="min-w-0 flex-1" />
+        </Suspense>
         <Link
           href="/ventas"
-          className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
+          className={`${historialBase} hidden md:flex md:w-[320px] md:shrink-0 md:min-h-[63px] md:rounded-[16px] md:text-[16px]`}
+          style={historialStyle}
         >
-          <Receipt size={14} aria-hidden /> Historial de ventas
+          <Receipt size={20} aria-hidden /> Historial de ventas
         </Link>
       </div>
 
+{/* Mobile: ordenar y el historial comparten fila, mismo alto.
+
+          flex-wrap con min-w y no grid-cols-2: los dos controles necesitan
+          ~172px para que su texto entre en una linea. Con grid a dos columnas
+          fijas, abajo de 388px de viewport la columna queda en 165px y
+          "Historial de ventas" se parte en dos renglones, que ademas descuadra
+          el alto de la fila. Asi se acomodan solos: entran juntos donde hay
+          lugar (393px, el ancho del mockup) y se apilan a lo ancho donde no. */}
+      <div className="mb-3 flex flex-wrap gap-3 md:hidden">
+        <Suspense fallback={<div className="h-[52px] min-w-[172px] flex-1" />}>
+          <Orden className="min-w-[172px] flex-1" />
+        </Suspense>
+        <Link
+          href="/ventas"
+          className={`${historialBase} flex min-w-[172px] flex-1 min-h-[52px] rounded-[12px] px-2.5 text-[14px] md:hidden`}
+          style={historialStyle}
+        >
+          <Receipt size={16} aria-hidden /> Historial de ventas
+        </Link>
+      </div>
+
+
       <div className="flex flex-col md:flex-row md:gap-8">
-        <aside className="md:w-[220px] md:shrink-0">
+        <aside className="md:w-[252px] md:shrink-0">
           <Suspense fallback={<div className="mb-5 h-[44px] md:h-[320px]" />}>
             <Filtros marcas={marcas} />
           </Suspense>
