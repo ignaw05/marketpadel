@@ -32,6 +32,16 @@ export type Vendedor = {
   miembroDesde: number;
 };
 
+export type Venta = {
+  id: string;
+  marca: string;
+  modelo: string;
+  estado: number; // 1-10
+  precio: number;
+  fotos: string[];
+  vendida_at: string;
+};
+
 export type FiltrosFeed = {
   q?: string;
   marca?: string;

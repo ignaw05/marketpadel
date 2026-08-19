@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PackageOpen, Plus, Eye, CheckCircle2, Star, AlertCircle } from "lucide-react";
+import { PackageOpen, Plus, Eye, CheckCircle2, Star, AlertCircle, Receipt } from "lucide-react";
 import { ImageWithFallback } from "../image-with-fallback";
 import { AccionesPaleta } from "../acciones-paleta";
 import { PromocionarDialog } from "../promocionar-dialog";
@@ -160,7 +160,16 @@ export function MyListings({
 
   return (
     <div className="mx-auto max-w-[760px] px-4 py-6 md:px-6">
-      <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 24 }}>Mis publicaciones</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 24 }}>Mis publicaciones</h1>
+        <Link
+          href="/mis-publicaciones/ventas"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-full px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{ border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
+        >
+          <Receipt size={14} aria-hidden /> Mis ventas
+        </Link>
+      </div>
 
       {publicada && (
         <p

@@ -10,6 +10,7 @@ import {
   POR_PAGINA,
   type Paleta,
   type Vendedor,
+  type Venta,
   type FiltrosFeed,
 } from "@/lib/paletas";
 import { limpiarBusqueda } from "@/lib/validar";
@@ -173,6 +174,56 @@ export async function listarMisPaletas(): Promise<Paleta[]> {
     marca: (marcas as unknown as { nombre: string } | null)?.nombre ?? "",
     promocionada: promoVigente(promociones as unknown as { hasta: string }[]),
   })) as unknown as Paleta[];
+}
+
+/**
+ * Lo que vendio el usuario logueado, mas reciente primero. No hay columna de
+ * fecha de venta: `updated_at` es lo mas cercano, y cambiarEstado() es la
+ * unica escritura que toca una vendida.
+ */
+export async function listarMisVentas(): Promise<Venta[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const data = await conReintento(() =>
+    supabase
+      .from("paletas")
+      .select("id, modelo, estado, precio, fotos, updated_at, marcas (nombre)")
+      .eq("vendedor_id", user.id)
+      .eq("estado_publicacion", "vendida")
+      .order("updated_at", { ascending: false }),
+  );
+
+  return (data ?? []).map(({ marcas, updated_at, ...v }) => ({
+    ...v,
+    marca: (marcas as unknown as { nombre: string } | null)?.nombre ?? "",
+    vendida_at: updated_at,
+  })) as unknown as Venta[];
+}
+
+/**
+ * Lo vendido en toda la app, mas reciente primero. Va contra ventas_publicas
+ * (0010): esa vista es anonima a proposito, sin vendedor_id ni descripcion, asi
+ * que ninguna venta ajena se puede rastrear hasta la persona que la hizo.
+ *
+ * ponytail: tope fijo en vez de paginado. Si el historial global crece lo
+ * suficiente como para que 60 se sientan poco, ahi entra la paginacion.
+ */
+export async function listarVentasGlobales(): Promise<Venta[]> {
+  const supabase = clientePublico();
+
+  const data = await conReintento(() =>
+    supabase
+      .from("ventas_publicas")
+      .select("id, marca, modelo, estado, precio, fotos, vendida_at")
+      .order("vendida_at", { ascending: false })
+      .limit(60),
+  );
+
+  return (data ?? []) as unknown as Venta[];
 }
 
 export async function listarMarcas(): Promise<{ id: number; nombre: string }[]> {
