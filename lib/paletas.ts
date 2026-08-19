@@ -37,7 +37,6 @@ export type FiltrosFeed = {
   marca?: string;
   forma?: string;
   provincia?: string;
-  ciudad?: string;
   precioMax?: string;
   estado?: string;
   orden?: string;
@@ -50,7 +49,6 @@ export const CLAVES_FILTRO = [
   "marca",
   "forma",
   "provincia",
-  "ciudad",
   "precioMax",
   "estado",
 ] as const satisfies readonly (keyof FiltrosFeed)[];
@@ -58,14 +56,14 @@ export const CLAVES_FILTRO = [
 /**
  * Titulo del feed segun los filtros puestos. Es el h1 de la home y el <title>
  * de la pestana a la vez: la misma frase que el usuario ve es la que indexa
- * Google, y filtrar por marca o ciudad deja de ser una pagina sin nombre.
+ * Google, y filtrar por marca deja de ser una pagina sin nombre.
  */
 export const tituloFeed = (f: FiltrosFeed): string =>
   [
     "Paletas de pádel",
     f.marca,
     "usadas",
-    f.ciudad ? `en ${f.ciudad}` : f.provincia ? `en ${f.provincia}` : "en Argentina",
+    f.provincia ? `en ${f.provincia}` : "en Argentina",
   ]
     .filter(Boolean)
     .join(" ");
@@ -73,20 +71,20 @@ export const tituloFeed = (f: FiltrosFeed): string =>
 /**
  * Que URL del feed merece ser una pagina propia para Google.
  *
- * marca, provincia y ciudad son un catalogo cerrado y chico: "paletas
- * Bullpadel usadas en Córdoba" es una busqueda real y da una lista distinta.
- * El resto (texto libre, precio, estado, forma, orden, paginado) multiplica
+ * marca y provincia son un catalogo cerrado y chico: "paletas Bullpadel
+ * usadas en Córdoba" es una busqueda real y da una lista distinta. El resto
+ * (texto libre, precio, estado, forma, orden, paginado) multiplica
  * combinaciones que son la misma lista reordenada, y eso se lleva el
  * presupuesto de rastreo sin traer una sola visita.
  *
- * El path sale siempre con las claves en el mismo orden: ?ciudad=X&marca=Y y
- * ?marca=Y&ciudad=X son la misma pagina y tienen que colapsar en una canonica.
+ * El path sale siempre con las claves en el mismo orden: ?provincia=X&marca=Y
+ * y ?marca=Y&provincia=X son la misma pagina y tienen que colapsar en una
+ * canonica.
  */
 export const canonicaFeed = (f: FiltrosFeed): { path: string; indexable: boolean } => {
   const qs = new URLSearchParams();
   if (f.marca) qs.set("marca", f.marca);
   if (f.provincia) qs.set("provincia", f.provincia);
-  if (f.ciudad) qs.set("ciudad", f.ciudad);
 
   return {
     path: qs.size ? `/?${qs}` : "/",

@@ -174,14 +174,12 @@ function QueEsPaletita() {
 export function HomeScreen({
   paletas,
   marcas,
-  ciudades,
   filtros,
   pagina,
   hayMas,
 }: {
   paletas: Paleta[];
   marcas: string[];
-  ciudades: string[];
   filtros: FiltrosFeed;
   pagina: number;
   hayMas: boolean;
@@ -223,7 +221,7 @@ export function HomeScreen({
       <div className="flex flex-col md:flex-row md:gap-8">
         <aside className="md:w-[220px] md:shrink-0">
           <Suspense fallback={<div className="mb-5 h-[44px] md:h-[320px]" />}>
-            <Filtros marcas={marcas} ciudades={ciudades} />
+            <Filtros marcas={marcas} />
           </Suspense>
         </aside>
 
