@@ -3,6 +3,7 @@
 //   npm i -D sharp
 //   node --env-file=.env.local scripts/backfill-minis.mjs              solo las minis que falten
 //   node --env-file=.env.local scripts/backfill-minis.mjs --grandes    ademas achica las grandes
+//   node --env-file=.env.local scripts/backfill-minis.mjs --grandes --respaldo ~/fotos-viejas
 //   npm un sharp
 //
 // Sin --grandes solo agrega archivos y no toca nada existente.
@@ -10,8 +11,8 @@
 // Con --grandes REEMPLAZA en el bucket las fotos que superan MAX_LADO. Es lo que
 // arregla las que se subieron mientras achicar() no tenia fallback a JPEG y se
 // iban crudas, de 4032px y varios MB. La ruta y el formato no cambian, asi que
-// las URLs de fotos[] siguen sirviendo. No hay vuelta atras: el original se
-// pierde.
+// las URLs de fotos[] siguen sirviendo. El original se pisa: con --respaldo se
+// guarda antes en esa carpeta, y si no se puede escribir ahi la foto no se toca.
 //
 // Idempotente en los dos modos: se puede volver a correr las veces que haga falta.
 //
@@ -19,12 +20,16 @@
 // pantalla realmente muestra; las huerfanas del bucket no interesan.
 
 import sharp from "sharp";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 const U = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const S = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!U || !S) throw new Error("faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY");
 
 const GRANDES = process.argv.includes("--grandes");
+const RESPALDO = process.argv[process.argv.indexOf("--respaldo") + 1];
+if (process.argv.includes("--respaldo") && !RESPALDO) throw new Error("--respaldo necesita una carpeta");
+if (RESPALDO) mkdirSync(RESPALDO, { recursive: true });
 
 // Mismos valores que MAX_LADO y MINI_LADO en lib/paletas.ts.
 const MAX_LADO = 1600;
@@ -98,6 +103,8 @@ for (const url of urls) {
       const { width, height } = await sharp(buf).metadata();
       if (Math.max(width, height) > MAX_LADO) {
         const chica = await encodar(buf, MAX_LADO, tipo);
+        // Primero el respaldo: si no se puede escribir, tira y la foto queda intacta.
+        if (RESPALDO) writeFileSync(`${RESPALDO}/${ruta.replaceAll("/", "_")}`, buf);
         await subir(ruta, chica, tipo, true);
         achicadas++;
         ahorro += buf.length - chica.length;
@@ -112,5 +119,6 @@ for (const url of urls) {
 const mb = (b) => (b / 1048576).toFixed(1);
 console.log(`\n${urls.length} fotos: ${minis} minis nuevas, ${intactas} ya estaban al dia`);
 if (GRANDES) console.log(`${achicadas} grandes achicadas, ${mb(ahorro)} MB liberados`);
+if (RESPALDO) console.log(`originales guardados en ${RESPALDO}`);
 console.log(`${fallidas.length} con error`);
 for (const f of fallidas) console.log(`  ${f}`);
