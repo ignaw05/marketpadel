@@ -69,3 +69,20 @@ export function firmaValida({
     crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(v1))
   );
 }
+
+/**
+ * La donacion no comparte la referencia de la promocion: lleva el vendedor
+ * adentro para que la vuelta de MP no dependa de que la cookie de sesion siga
+ * viva. `leerReferencia` la rechaza sola (le sobra una parte), asi que el
+ * webhook de promociones no puede actuar sobre una donacion.
+ */
+export const armarDonacion = (paletaId: string, vendedorId: string): string =>
+  `donacion:${paletaId}:${vendedorId}`;
+
+export function leerDonacion(
+  ref?: string | null,
+): { paletaId: string; vendedorId: string } | null {
+  const [tipo, paletaId, vendedorId, ...resto] = (ref ?? "").split(":");
+  if (tipo !== "donacion" || !paletaId || !vendedorId || resto.length) return null;
+  return { paletaId, vendedorId };
+}

@@ -1,6 +1,13 @@
 import crypto from "node:crypto";
 import { test, expect } from "vitest";
-import { armarReferencia, firmaValida, leerReferencia, traducirEstado } from "./mercadopago";
+import {
+  armarDonacion,
+  armarReferencia,
+  firmaValida,
+  leerDonacion,
+  leerReferencia,
+  traducirEstado,
+} from "./mercadopago";
 import { PLANES } from "./paletas";
 
 // --- firma del webhook ----------------------------------------------------
@@ -107,4 +114,45 @@ test("el monto cobrado tiene que coincidir con el plan de esos dias", () => {
   expect(coincide(30, 3000)).toBe(false); // pago los 15 dias, pide los 30
   expect(coincide(15, 1)).toBe(false);
   expect(coincide(60, 4000)).toBe(false); // dias que no son de ningun plan
+});
+
+// --- referencia de la donacion --------------------------------------------
+// Lleva el vendedor adentro porque la vuelta de MP no depende de la sesion: es
+// lo unico que decide de quien es la publicacion que se marca vendida.
+
+const PALETA = "11111111-1111-1111-1111-111111111111";
+const VENDEDOR = "22222222-2222-2222-2222-222222222222";
+
+test("armarDonacion y leerDonacion son ida y vuelta", () => {
+  expect(leerDonacion(armarDonacion(PALETA, VENDEDOR))).toEqual({
+    paletaId: PALETA,
+    vendedorId: VENDEDOR,
+  });
+});
+
+test("leerDonacion devuelve null ante cualquier basura", () => {
+  for (const ref of [
+    undefined,
+    null,
+    "",
+    ":",
+    "donacion",
+    `donacion:${PALETA}`,
+    `donacion::${VENDEDOR}`,
+    `donacion:${PALETA}:`,
+    `donacion:${PALETA}:${VENDEDOR}:sobra`,
+    `${PALETA}:30`,
+    "otra:cosa:acá",
+  ]) {
+    expect(leerDonacion(ref)).toBeNull();
+  }
+});
+
+test("el webhook de promociones no puede actuar sobre una donacion", () => {
+  // Si leerReferencia aceptara esto, un pago de donacion promocionaria gratis.
+  expect(leerReferencia(armarDonacion(PALETA, VENDEDOR))).toBeNull();
+});
+
+test("leerDonacion no acepta una referencia de promocion", () => {
+  expect(leerDonacion(armarReferencia(PALETA, 30))).toBeNull();
 });
