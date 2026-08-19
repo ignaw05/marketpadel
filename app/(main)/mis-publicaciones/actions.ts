@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Preference } from "mercadopago";
 import { createClient } from "@/lib/supabase/server";
-import { BASE, armarReferencia, mp } from "@/lib/mercadopago";
+import { BASE, armarDonacion, armarReferencia, mp } from "@/lib/mercadopago";
 import {
   DURACION_DIAS,
   PLANES,
   RENOVAR_DESDE_DIAS,
+  montoDonacion,
   promoVigente,
   type EstadoPublicacion,
 } from "@/lib/paletas";
@@ -120,6 +121,61 @@ export async function promocionar(fd: FormData) {
 
   // Quien promociona es el webhook, no esta pantalla: el usuario puede cerrar el
   // navegador antes de volver. Fuera de cualquier try, redirect() tira a proposito.
+  redirect(pref.init_point!);
+}
+
+/**
+ * Donacion opcional al marcar vendida. A diferencia de promocionar(), el monto
+ * si viene del form: es una donacion, no un precio de catalogo. Por eso pasa por
+ * montoDonacion(), que acota el rango.
+ *
+ * Quien marca la publicacion como vendida es la vuelta en /api/donacion, no esta
+ * action: si el pago no se aprueba, la publicacion tiene que quedar como estaba.
+ */
+export async function donar(fd: FormData) {
+  const id = String(fd.get("id") ?? "");
+  const monto = montoDonacion(fd.get("monto"));
+  if (!id || !monto) return;
+
+  // MercadoPago rechaza las back_urls relativas con un error que no dice nada.
+  if (!BASE) throw new Error("Falta NEXT_PUBLIC_BASE_URL");
+
+  const { supabase, uid } = await sesion();
+
+  // Que sea propia y que no este vendida ya: donar no tiene que revivir nada.
+  const { data: paleta } = await supabase
+    .from("paletas")
+    .select("id")
+    .eq("id", id)
+    .eq("vendedor_id", uid)
+    .neq("estado_publicacion", "vendida")
+    .maybeSingle();
+
+  if (!paleta) return;
+
+  const pref = await new Preference(mp()).create({
+    body: {
+      items: [
+        {
+          id: "donacion",
+          title: "Donación a Paletita",
+          quantity: 1,
+          unit_price: monto,
+          currency_id: "ARS",
+        },
+      ],
+      external_reference: armarDonacion(id, uid),
+      // Las tres a la misma puerta: el estado real lo dice MP, no la URL.
+      back_urls: {
+        success: `${BASE}/api/donacion`,
+        failure: `${BASE}/api/donacion`,
+        pending: `${BASE}/api/donacion`,
+      },
+      auto_return: "approved",
+    },
+  });
+
+  // Fuera de cualquier try: redirect() tira a proposito.
   redirect(pref.init_point!);
 }
 

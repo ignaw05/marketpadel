@@ -283,3 +283,24 @@ export const MINI_LADO = 400;
  * Si la foto no tiene extension, devuelve la misma URL y se sirve la grande.
  */
 export const miniatura = (url: string): string => url.replace(/(\.[^./]+)$/, "-mini$1");
+
+// ---------------------------------------------------------------- donacion
+
+/** Sugerencias, no precios: quien dona elige. */
+export const MONTOS_DONACION = [1000, 2000, 5000];
+
+export const MONTO_DONACION_MIN = 500;
+export const MONTO_DONACION_MAX = 500_000;
+
+/**
+ * Null ante cualquier cosa que no sea un monto entero en rango. El piso es de
+ * MercadoPago; el techo evita el cero de mas al tipear en el celular.
+ */
+export function montoDonacion(crudo: unknown): number | null {
+  const texto = String(crudo ?? "").trim();
+  if (!texto) return null;
+
+  const n = Number(texto);
+  if (!Number.isInteger(n) || n < MONTO_DONACION_MIN || n > MONTO_DONACION_MAX) return null;
+  return n;
+}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PackageOpen, Plus, Eye, CheckCircle2, Star, AlertCircle, Receipt } from "lucide-react";
+import { PackageOpen, Plus, Eye, CheckCircle2, Star, AlertCircle, Receipt, Heart } from "lucide-react";
 import { ImageWithFallback } from "../image-with-fallback";
 import { AccionesPaleta } from "../acciones-paleta";
 import { PromocionarDialog } from "../promocionar-dialog";
@@ -138,19 +138,66 @@ const AVISO_PAGO = {
   },
 } as const;
 
+// La donacion sí la confirma la vuelta: /api/donacion le pregunta a MP por el
+// pago antes de marcar nada, asi que aca ya esta todo hecho.
+const AVISO_DONACION = {
+  exito: {
+    texto: "¡Gracias por tu donación! Marcamos la publicación como vendida.",
+    fondo: "rgba(5,115,5,0.08)",
+    color: "#057305",
+    alerta: false,
+  },
+  pendiente: {
+    texto:
+      "Tu donación quedó pendiente de aprobación. La publicación todavía no se marcó como vendida: podés marcarla con el botón “La vendí”.",
+    fondo: "#F2F1ED",
+    color: "#14171A",
+    alerta: false,
+  },
+  error: {
+    texto:
+      "La donación no se completó. No te cobramos nada, y la publicación sigue como estaba.",
+    fondo: "rgba(212,24,61,0.08)",
+    color: "#D4183D",
+    alerta: true,
+  },
+} as const;
+
+type Aviso = { texto: string; fondo: string; color: string; alerta: boolean };
+
+function Banner({ aviso, Icono }: { aviso: Aviso; Icono: typeof Star }) {
+  return (
+    <p
+      role={aviso.alerta ? "alert" : "status"}
+      className="mt-4 flex items-start gap-2 rounded-[14px] p-3 text-[14px]"
+      style={{ background: aviso.fondo, color: aviso.color, lineHeight: 1.5 }}
+    >
+      {aviso.alerta ? (
+        <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden />
+      ) : (
+        <Icono size={16} className="mt-0.5 shrink-0" aria-hidden />
+      )}
+      {aviso.texto}
+    </p>
+  );
+}
+
 export function MyListings({
   paletas,
   publicada,
   editada,
   pago,
+  donacion,
 }: {
   paletas: Paleta[];
   /** Id de la que se acaba de publicar: abre sola la invitacion a promocionar. */
   publicada?: string;
   editada?: boolean;
   pago?: string;
+  donacion?: string;
 }) {
   const aviso = AVISO_PAGO[pago as keyof typeof AVISO_PAGO];
+  const gracias = AVISO_DONACION[donacion as keyof typeof AVISO_DONACION];
   // Una vencida no cuenta como activa: no la ve nadie.
   const activas = paletas.filter(
     (p) => p.estado_publicacion === "activa" && !vencida(p),
@@ -191,20 +238,9 @@ export function MyListings({
         </p>
       )}
 
-      {aviso && (
-        <p
-          role={aviso.alerta ? "alert" : "status"}
-          className="mt-4 flex items-start gap-2 rounded-[14px] p-3 text-[14px]"
-          style={{ background: aviso.fondo, color: aviso.color, lineHeight: 1.5 }}
-        >
-          {aviso.alerta ? (
-            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden />
-          ) : (
-            <Star size={16} className="mt-0.5 shrink-0" aria-hidden />
-          )}
-          {aviso.texto}
-        </p>
-      )}
+      {aviso && <Banner aviso={aviso} Icono={Star} />}
+
+      {gracias && <Banner aviso={gracias} Icono={Heart} />}
 
       <div className="mt-4 grid grid-cols-3 gap-3">
         <Metric label="Activas" value={String(activas)} />
