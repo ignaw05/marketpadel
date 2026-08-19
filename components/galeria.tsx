@@ -84,7 +84,7 @@ export function Galeria({ fotos, titulo }: { fotos: string[]; titulo: string }) 
               {/* Fondo: la misma foto ampliada y borroneada. Llena el cuadro sin
                   recortar la paleta ni dejar barras grises al costado. */}
               <div className="absolute inset-0 scale-110 blur-2xl" aria-hidden>
-                <ImageWithFallback src={f} alt="" sizes="64px" className="object-cover" />
+                <ImageWithFallback src={f} alt="" sizes="64px" mini className="object-cover" />
               </div>
               <ImageWithFallback
                 src={f}

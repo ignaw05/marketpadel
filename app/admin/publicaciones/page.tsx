@@ -106,7 +106,13 @@ function Fila({ p }: { p: PublicacionAdmin }) {
         className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[10px]"
         style={{ background: "#F2F1ED" }}
       >
-        <ImageWithFallback src={foto(p)} alt={titulo} sizes="64px" className="object-contain p-1" />
+        <ImageWithFallback
+          src={foto(p)}
+          alt={titulo}
+          sizes="64px"
+          mini
+          className="object-contain p-1"
+        />
       </div>
 
       <div className="min-w-0 flex-1 basis-[200px]">

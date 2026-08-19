@@ -22,6 +22,9 @@ import {
   Forma,
   estadoLabel,
   medidas,
+  miniatura,
+  MAX_LADO,
+  MINI_LADO,
 } from "@/lib/paletas";
 import type { Paleta } from "@/lib/paletas";
 import { validarFotos, MAX_BYTES } from "@/lib/validar";
@@ -94,8 +97,8 @@ const MAX_BYTES_ORIGEN = 25 * 1024 * 1024;
  * ponytail: sin libreria de compresion. Si el navegador no encoda WebP, devuelve
  * la original y sigue andando.
  */
-async function achicar(file: File, bitmap: ImageBitmap): Promise<File> {
-  const { ancho, alto } = medidas(bitmap.width, bitmap.height);
+async function encodar(bitmap: ImageBitmap, max: number): Promise<Blob | null> {
+  const { ancho, alto } = medidas(bitmap.width, bitmap.height, max);
   const canvas = document.createElement("canvas");
   canvas.width = ancho;
   canvas.height = alto;
@@ -106,7 +109,12 @@ async function achicar(file: File, bitmap: ImageBitmap): Promise<File> {
   );
   // toBlob cae a PNG cuando no sabe encodar el tipo pedido, y ese PNG pesa mas
   // que la foto original.
-  if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+  return blob?.type === "image/webp" ? blob : null;
+}
+
+async function achicar(file: File, bitmap: ImageBitmap): Promise<File> {
+  const blob = await encodar(bitmap, MAX_LADO);
+  if (!blob || blob.size >= file.size) return file;
   return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", {
     type: "image/webp",
   });
@@ -307,7 +315,7 @@ export function PublishScreen({
   paleta?: Paleta;
 }) {
   const editando = !!paleta;
-  const [fotos, setFotos] = useState<{ file?: File; url: string }[]>(
+  const [fotos, setFotos] = useState<{ file?: File; mini?: Blob | null; url: string }[]>(
     paleta ? paleta.fotos.map((url) => ({ url })) : [],
   );
 
@@ -331,7 +339,7 @@ export function PublishScreen({
     const urls: string[] = [];
     // ponytail: si falla a mitad quedan fotos huerfanas en el bucket; limpiarlas
     // con un job de storage si alguna vez molesta.
-    for (const { file, url } of fotos) {
+    for (const { file, mini, url } of fotos) {
       if (!file) {
         urls.push(url);
         continue;
@@ -343,6 +351,13 @@ export function PublishScreen({
         .from("paletas")
         .upload(ruta, file, { contentType: file.type });
       if (error) return { ...prev, error: "No pudimos subir las fotos. Probá de nuevo." };
+      // ponytail: si la mini no sube, la publicacion sale igual — ImageWithFallback
+      // cae a la foto grande. No vale frenar una venta por una miniatura.
+      if (mini) {
+        await supabase.storage
+          .from("paletas")
+          .upload(miniatura(ruta), mini, { contentType: mini.type });
+      }
       urls.push(supabase.storage.from("paletas").getPublicUrl(ruta).data.publicUrl);
     }
 
@@ -417,12 +432,16 @@ export function PublishScreen({
       }
 
       const liviana = await achicar(file, bitmap);
+      // La mini es lo que se sirve en el feed, las listas y el fondo de la galeria:
+      // sin ella cada card se baja la foto de 1600px. Sale del mismo bitmap, asi que
+      // es un encode mas y ninguna decodificacion extra.
+      const mini = await encodar(bitmap, MINI_LADO);
       bitmap.close();
       if (liviana.size > MAX_BYTES) {
         pesadas.push(file.name);
         continue;
       }
-      nuevas.push({ file: liviana, url: URL.createObjectURL(liviana) });
+      nuevas.push({ file: liviana, mini, url: URL.createObjectURL(liviana) });
     }
 
     setFotos([...fotos, ...nuevas]);

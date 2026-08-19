@@ -264,3 +264,14 @@ export const medidas = (ancho: number, alto: number, max = MAX_LADO) => {
   const escala = Math.min(1, max / Math.max(ancho, alto));
   return { ancho: Math.round(ancho * escala), alto: Math.round(alto * escala) };
 };
+
+/** Lado de la miniatura que se sube junto a la foto: la card del feed no pasa de 200 CSS px. */
+export const MINI_LADO = 400;
+
+/**
+ * URL (o ruta de storage) de la miniatura de una foto: `a/b.webp` -> `a/b-mini.webp`.
+ * ponytail: convencion de nombre, no una columna nueva. La miniatura se deriva de la
+ * URL grande que ya esta en `fotos[]`, asi que no hay migracion ni dato que sincronizar.
+ * Si la foto no tiene extension, devuelve la misma URL y se sirve la grande.
+ */
+export const miniatura = (url: string): string => url.replace(/(\.[^./]+)$/, "-mini$1");

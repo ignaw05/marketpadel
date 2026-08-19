@@ -7,9 +7,17 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   images: {
+    // Las fotos ya se suben optimizadas: WebP de 1600px mas su variante -mini de
+    // 400px (ver achicar/encodar en publish-screen). Volver a pasarlas por el
+    // optimizador de Vercel no cambia el peso y consume transformaciones del free
+    // tier — una por cada combinacion de origen + ancho + calidad + formato, y el
+    // consumo escala con el catalogo. Con unoptimized el consumo es cero y ningun
+    // <Image> nuevo lo puede volver a subir sin querer.
+    unoptimized: true,
+    // Ignorado mientras unoptimized este activo; queda para no romper si algun dia
+    // se revierte.
     remotePatterns: [
       { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
-      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
 };
