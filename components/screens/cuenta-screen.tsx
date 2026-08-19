@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
+import { LogOut } from "lucide-react";
 import { Aviso, Field, Submit } from "../campos";
+import { cerrarSesion } from "@/app/auth/actions";
 import {
   guardarPerfil,
   cambiarPassword,
@@ -125,6 +127,25 @@ export function CuentaScreen({
           <Submit cargando="Cambiando…" variante="borde">
             Cambiar contraseña
           </Submit>
+        </form>
+      </Seccion>
+
+      {/* Cerrar sesión vive acá y no en el menú del header: el menú quedó con
+          las dos secciones a las que se va, y esto es una acción, no un lugar. */}
+      <Seccion titulo="Sesión">
+        <form action={cerrarSesion}>
+          <button
+            type="submit"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[15px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{
+              border: "1px solid #E6E4DF",
+              color: "#14171A",
+              fontWeight: 600,
+              outlineColor: "#057305",
+            }}
+          >
+            <LogOut size={18} aria-hidden /> Cerrar sesión
+          </button>
         </form>
       </Seccion>
     </div>

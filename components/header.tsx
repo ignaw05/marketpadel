@@ -1,23 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Search, Plus, LayoutGrid, LogOut, LogIn, UserRound, ArrowLeft } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Plus, LayoutGrid, LogIn, UserRound, Menu, ArrowLeft } from "lucide-react";
 import { Logo } from "./logo";
-import { cerrarSesion } from "@/app/auth/actions";
+import { Sponsors } from "./sponsors";
+import type { Sponsor } from "@/lib/sponsors-db";
 
-const OTROS_FILTROS = ["marca", "forma", "precioMax", "estado"];
+const VERDE = "#057305";
+
+/**
+ * Los tres controles de la derecha comparten caja optica y area tactil: 20px de
+ * glifo dentro de 44px de target. Medido sobre el mockup, donde los tres ocupan
+ * el mismo cuadrado y estan alineados al mismo centro.
+ *
+ * El unico apartamiento del mockup es la separacion: ahi los centros estan a
+ * 26px y un target de 44px no entra sin pisarse con el de al lado. Las cajas van
+ * pegadas (gap 0), que deja los centros a 44px.
+ */
+const GLIFO = 20;
+
+const accionHeader =
+  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
 
 /** ponytail: SVG inline. lucide-react v1 sacó los iconos de marca, no hay `Instagram`. */
 function IconoInstagram() {
   return (
     <svg
-      width="16"
-      height="16"
+      width={GLIFO}
+      height={GLIFO}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      // 1.75 y no 2: en el mockup el trazo de Instagram es mas fino que las
+      // barras de la hamburguesa, y a 20px la diferencia se ve.
+      strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -29,207 +46,154 @@ function IconoInstagram() {
   );
 }
 
-/**
- * ponytail: form GET nativo, busca al hacer Enter. Sin router.replace por tecla,
- * que ahora seria una query a la base por letra. Si se quiere busqueda en vivo,
- * el upgrade es un debounce de ~300ms sobre onChange.
- */
-function Buscador({ id, className }: { id: string; className?: string }) {
-  const params = useSearchParams();
-
-  return (
-    <form action="/" className={className}>
-      {OTROS_FILTROS.map((k) => {
-        const v = params.get(k);
-        return v ? <input key={k} type="hidden" name={k} value={v} /> : null;
-      })}
-      <div className="relative">
-        <Search
-          size={18}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: "#5B6470" }}
-          aria-hidden
-        />
-        <label className="sr-only" htmlFor={id}>
-          Buscar por marca o modelo
-        </label>
-        <input
-          id={id}
-          name="q"
-          type="search"
-          defaultValue={params.get("q") ?? ""}
-          placeholder="Buscar por marca o modelo…"
-          className="min-h-[44px] w-full rounded-[14px] py-2.5 pl-10 pr-3 text-[14px] outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{
-            background: "#FAFAF8",
-            border: "1px solid #E6E4DF",
-            color: "#14171A",
-            outlineColor: "#057305",
-          }}
-        />
-      </div>
-    </form>
-  );
-}
-
 /** Ocupa el lugar del buscador fuera del feed: ahi buscar paletas no hace nada. */
-function VolverAlMercado({ className }: { className?: string }) {
+function VolverAlMercado() {
   return (
-    <div className={className}>
-      <Link
-        href="/"
-        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
-      >
-        <ArrowLeft size={18} aria-hidden /> Volver al mercado
-      </Link>
+    <div
+      className="px-4 py-1.5 md:px-6"
+      style={{ background: "#FFFFFF", borderBottom: "1px solid #E6E4DF" }}
+    >
+      <div className="mx-auto max-w-[1280px]">
+        <Link
+          href="/"
+          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-2 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{ color: "#14171A", fontWeight: 600, outlineColor: VERDE }}
+        >
+          <ArrowLeft size={18} aria-hidden /> Volver al mercado
+        </Link>
+      </div>
     </div>
   );
 }
 
-export function Header({
+const itemMenu =
+  "flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2";
+
+/**
+ * ponytail: <details> nativo, sin JS ni click-afuera. Se cierra al navegar o al
+ * volver a tocar el boton. Si molesta quedar abierto, el upgrade es un onBlur
+ * en el contenedor.
+ */
+function MenuPrincipal({
   usuario,
+  enMisPaletas,
 }: {
   usuario: { nombre: string; apellido: string } | null;
+  enMisPaletas: boolean;
+}) {
+  return (
+    <details className="relative">
+      <summary
+        aria-label="Menú"
+        className={`${accionHeader} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+      >
+        <Menu size={GLIFO} strokeWidth={3} aria-hidden />
+      </summary>
+
+      <div
+        className="absolute right-0 top-[calc(100%+8px)] z-40 w-56 rounded-[14px] p-1.5 shadow-lg"
+        style={{ background: "#FFFFFF", border: "1px solid #E6E4DF" }}
+      >
+        {usuario ? (
+          <>
+            <Link
+              href="/mis-publicaciones"
+              aria-current={enMisPaletas ? "page" : undefined}
+              className={itemMenu}
+              style={{
+                color: enMisPaletas ? VERDE : "#14171A",
+                background: enMisPaletas ? "#EAF4EA" : undefined,
+                fontWeight: 600,
+                outlineColor: VERDE,
+              }}
+            >
+              <LayoutGrid size={16} aria-hidden /> Mis paletas
+            </Link>
+            {/* Sin iniciales ni avatar: el item dice que es. Cerrar sesión vive
+                adentro de /cuenta, no acá. */}
+            <Link
+              href="/cuenta"
+              className={itemMenu}
+              style={{ color: "#14171A", fontWeight: 600, outlineColor: VERDE }}
+            >
+              <UserRound size={16} aria-hidden /> Mi perfil
+            </Link>
+          </>
+        ) : (
+          <Link
+            href="/auth"
+            className={itemMenu}
+            style={{ color: "#14171A", fontWeight: 600, outlineColor: VERDE }}
+          >
+            <LogIn size={16} aria-hidden /> Ingresar
+          </Link>
+        )}
+      </div>
+    </details>
+  );
+}
+
+/**
+ * Lo unico que queda fijo al scrollear: la barra verde y, abajo, la tira de
+ * sponsors. El buscador salio de acá y vive en el feed (components/screens/
+ * home-screen), asi que se va con el scroll como el resto del contenido.
+ */
+export function Header({
+  usuario,
+  sponsors,
+}: {
+  usuario: { nombre: string; apellido: string } | null;
+  sponsors: Sponsor[];
 }) {
   const pathname = usePathname();
   const enMisPaletas = pathname === "/mis-publicaciones";
   const enFeed = pathname === "/";
-  const iniciales = usuario
-    ? (`${usuario.nombre[0] ?? ""}${usuario.apellido[0] ?? ""}`.toUpperCase() || "?")
-    : "?";
-  const nombreCompleto = usuario ? `${usuario.nombre} ${usuario.apellido}`.trim() || "Mi cuenta" : "";
 
   return (
-    <header
-      className="sticky top-0 z-30"
-      style={{ background: "#FFFFFF", borderBottom: "1px solid #E6E4DF" }}
-    >
-      {/* ponytail: franja propia arriba de todo. En el row principal el link de
-          Instagram compite por ancho con Publicar/Mis paletas/avatar y en 320px
-          los empuja fuera de pantalla. */}
-      <div style={{ background: "#057305" }}>
-        <div className="mx-auto flex max-w-[1280px] justify-end px-4 md:px-6">
-          <a
-            href="https://instagram.com/paletita.ar"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-[13px] text-white transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
-            style={{ fontWeight: 600 }}
-          >
-            <IconoInstagram />
-            @paletita.ar
-            <span className="sr-only"> en Instagram (abre en una pestaña nueva)</span>
-          </a>
-        </div>
-      </div>
-
-      <div className="mx-auto flex max-w-[1280px] items-center gap-2 px-4 py-3 sm:gap-3 md:gap-5 md:px-6">
-        <Link
-          href="/"
-          className="shrink-0 rounded focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ outlineColor: "#057305" }}
-        >
-          <Logo />
-        </Link>
-
-        {/* min-w-0: sin esto el flex item no baja de su ancho de contenido y empuja al header fuera de pantalla */}
-        {enFeed ? (
-          <Buscador id="buscar-desktop" className="hidden min-w-0 flex-1 md:block" />
-        ) : (
-          <VolverAlMercado className="hidden min-w-0 flex-1 md:block" />
-        )}
-
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+    <header className="sticky top-0 z-30">
+      <div style={{ background: VERDE }}>
+        <div className="mx-auto flex max-w-[1280px] items-center gap-2 px-4 py-2.5 md:px-6">
+          {/* py-2.5 sobre un target de 44px da los 64px de alto del mockup. */}
           <Link
-            href="/publicar"
-            className="flex h-11 min-h-[44px] w-11 items-center justify-center gap-1.5 rounded-full text-[14px] text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto sm:rounded-[14px] sm:px-3.5"
-            style={{ background: "#057305", fontWeight: 600, outlineColor: "#057305" }}
+            href="/"
+            className="shrink-0 rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <Plus size={18} aria-hidden />
-            <span className="hidden sm:inline">Publicar</span>
-            <span className="sr-only sm:hidden">Publicar paleta</span>
+            <Logo />
           </Link>
 
-          {usuario ? (
-            <>
-              <Link
-                href="/mis-publicaciones"
-                aria-current={enMisPaletas ? "page" : undefined}
-                className="flex h-11 min-h-[44px] w-11 items-center justify-center gap-1.5 rounded-full text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto sm:rounded-[14px] sm:px-3"
-                style={{
-                  color: enMisPaletas ? "#057305" : "#5B6470",
-                  background: enMisPaletas ? "#EAF4EA" : undefined,
-                  fontWeight: 600,
-                  outlineColor: "#057305",
-                }}
-              >
-                <LayoutGrid size={18} aria-hidden />
-                <span className="hidden sm:inline">Mis paletas</span>
-                <span className="sr-only sm:hidden">Mis paletas</span>
-              </Link>
-
-              {/* ponytail: <details> nativo, sin JS ni click-afuera. Se cierra al
-                  navegar o al volver a tocar el avatar. Si molesta quedar abierto,
-                  el upgrade es un onBlur en el contenedor. */}
-              <details className="relative">
-                <summary
-                  className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden"
-                  style={{
-                    background: "#F2F1ED",
-                    border: "1px solid #E6E4DF",
-                    color: "#057305",
-                    fontWeight: 700,
-                    outlineColor: "#057305",
-                  }}
-                >
-                  <span aria-hidden>{iniciales}</span>
-                  <span className="sr-only">Mi cuenta</span>
-                </summary>
-
-                <div
-                  className="absolute right-0 top-[calc(100%+8px)] z-40 w-56 rounded-[14px] p-1.5 shadow-lg"
-                  style={{ background: "#FFFFFF", border: "1px solid #E6E4DF" }}
-                >
-                  <p className="px-3 py-2 text-[13px]" style={{ color: "#5B6470" }}>
-                    {nombreCompleto}
-                  </p>
-                  <Link
-                    href="/cuenta"
-                    className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-                    style={{ color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
-                  >
-                    <UserRound size={16} aria-hidden /> Mi cuenta
-                  </Link>
-                  <form action={cerrarSesion}>
-                    <button
-                      type="submit"
-                      className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-left text-[14px] transition-colors hover:bg-[#F2F1ED] focus-visible:outline-2 focus-visible:outline-offset-2"
-                      style={{ color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
-                    >
-                      <LogOut size={16} aria-hidden /> Cerrar sesión
-                    </button>
-                  </form>
-                </div>
-              </details>
-            </>
-          ) : (
-            <Link
-              href="/auth"
-              className="flex min-h-[44px] items-center gap-1.5 rounded-[14px] px-3 py-2 text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ color: "#5B6470", fontWeight: 600, outlineColor: "#057305" }}
+          <div className="ml-auto flex shrink-0 items-center">
+            <a
+              href="https://instagram.com/paletita.ar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={accionHeader}
             >
-              <LogIn size={16} aria-hidden /> Ingresar
+              <IconoInstagram />
+              <span className="sr-only">
+                @paletita.ar en Instagram (abre en una pestaña nueva)
+              </span>
+            </a>
+
+            <Link href="/publicar" className={accionHeader}>
+              {/* El circulo blanco mide lo mismo que los otros dos glifos; el
+                  target de 44px lo rodea sin dibujarse. */}
+              <span
+                className="flex items-center justify-center rounded-full"
+                style={{ width: GLIFO, height: GLIFO, background: "#FFFFFF", color: VERDE }}
+              >
+                <Plus size={13} strokeWidth={3} aria-hidden />
+              </span>
+              <span className="sr-only">Publicar paleta</span>
             </Link>
-          )}
+
+            <MenuPrincipal usuario={usuario} enMisPaletas={enMisPaletas} />
+          </div>
         </div>
       </div>
 
-      {enFeed ? (
-        <Buscador id="buscar-mobile" className="px-4 pb-3 md:hidden" />
-      ) : (
-        <VolverAlMercado className="px-4 pb-3 md:hidden" />
-      )}
+      {!enFeed && <VolverAlMercado />}
+
+      <Sponsors sponsors={sponsors} />
     </header>
   );
 }

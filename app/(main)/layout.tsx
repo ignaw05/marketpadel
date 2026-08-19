@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Header } from "@/components/header";
 import { createClient } from "@/lib/supabase/server";
+import { listarSponsors } from "@/lib/sponsors-db";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -9,21 +10,26 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     data: { user },
   } = await supabase.auth.getUser();
 
-  const perfil = user
-    ? (
-        await supabase
+  // En paralelo: la tira de sponsors no depende de quien esta logueado, y
+  // encadenarlas suma un viaje a la base al TTFB de cada pagina.
+  const [perfil, sponsors] = await Promise.all([
+    user
+      ? supabase
           .from("perfiles")
           .select("nombre, apellido")
           .eq("id", user.id)
           .maybeSingle()
-      ).data
-    : null;
+          .then((r) => r.data)
+      : Promise.resolve(null),
+    listarSponsors(),
+  ]);
 
   return (
     <>
       <Suspense fallback={null}>
         <Header
           usuario={user ? { nombre: perfil?.nombre ?? "", apellido: perfil?.apellido ?? "" } : null}
+          sponsors={sponsors}
         />
       </Suspense>
       {children}

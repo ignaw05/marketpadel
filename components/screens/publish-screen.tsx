@@ -391,6 +391,7 @@ export function PublishScreen({
   const [estado, setEstado] = useState(paleta?.estado ?? 6);
   const [precio, setPrecio] = useState(paleta ? String(paleta.precio) : "");
   const [desc, setDesc] = useState(paleta?.descripcion ?? "");
+  const [permuta, setPermuta] = useState(paleta?.acepta_permuta ?? false);
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -408,7 +409,10 @@ export function PublishScreen({
       const campo = f.elements.namedItem(nombre);
       if (campo instanceof HTMLSelectElement) campo.value = valor;
     }
-  }, [state, anio, provincia]);
+    // Mismo problema con el checkbox: el reset lo devuelve a defaultChecked.
+    const check = f.elements.namedItem("permuta");
+    if (check instanceof HTMLInputElement) check.checked = permuta;
+  }, [state, anio, provincia, permuta]);
 
   const agregar = async (files: FileList | null) => {
     if (!files) return;
@@ -816,6 +820,28 @@ export function PublishScreen({
             style={inputStyle(e.descripcion)}
           />
         </Campo>
+
+        <div>
+          <label
+            htmlFor="permuta"
+            className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-[15px]"
+            style={{ color: "#14171A" }}
+          >
+            <input
+              id="permuta"
+              name="permuta"
+              type="checkbox"
+              checked={permuta}
+              onChange={(ev) => setPermuta(ev.target.checked)}
+              className="h-5 w-5 shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
+              style={{ accentColor: "#057305", outlineColor: "#057305" }}
+            />
+            Acepto permuta por otra paleta
+          </label>
+          <p className="mt-0.5 text-[13px]" style={{ color: "#5B6470" }}>
+            Los compradores pueden filtrar el mercado por esto.
+          </p>
+        </div>
 
         {/* Ultima linea del formulario: en mobile queda arriba de la barra fija, en
             desktop justo arriba del boton. Un solo lugar para los dos. */}

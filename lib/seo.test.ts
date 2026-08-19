@@ -13,7 +13,7 @@ test("las facetas de catalogo se indexan y el resto no", () => {
   expect(canonicaFeed({})).toEqual({ path: "/", indexable: true });
   expect(canonicaFeed({ marca: "Head" })).toEqual({ path: "/?marca=Head", indexable: true });
 
-  for (const f of [{ q: "hack" }, { forma: "Diamante" }, { precioMax: "200000" }, { estado: "MUY BUENA" }, { pagina: "2" }]) {
+  for (const f of [{ q: "hack" }, { forma: "Diamante" }, { precioMax: "200000" }, { estado: "MUY BUENA" }, { permuta: "S\u00ed" }, { pagina: "2" }]) {
     expect(canonicaFeed(f).indexable, JSON.stringify(f)).toBe(false);
   }
 

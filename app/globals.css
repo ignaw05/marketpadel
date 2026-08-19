@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/* Tira de sponsors. La duracion y la cantidad de copias las pone el componente:
+   la duracion segun cuantos sponsors haya, para que la velocidad no dependa del
+   largo de la lista, y --copias segun cuantas hagan falta para cubrir la
+   pantalla. El desplazamiento es 100%/copias, o sea una copia exacta: al
+   terminar la vuelta, la copia de al lado quedo donde arrancaba la primera y el
+   salto no se ve. */
+@theme {
+  --animate-marquee: marquee linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(calc(-100% / var(--copias, 2)));
+  }
+}
+
 body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }

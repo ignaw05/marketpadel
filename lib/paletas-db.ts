@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createClient, clientePublico } from "@/lib/supabase/server";
 import {
   ESTADOS,
+  PERMUTA,
   topePrecio,
   promoVigente,
   ordenActual,
@@ -17,7 +18,7 @@ import { limpiarBusqueda } from "@/lib/validar";
 import { conReintento } from "@/lib/reintentar";
 
 const VISTA =
-  "id, vendedor_id, marca, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, promocionada";
+  "id, vendedor_id, marca, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, acepta_permuta, promocionada";
 
 /**
  * Una pagina del feed. Los filtros se aplican en la query, o sea contra el
@@ -62,6 +63,10 @@ export async function listarPaletas(
     if (f.marca) query = query.eq("marca", f.marca);
     if (f.forma) query = query.eq("forma", f.forma);
     if (f.provincia) query = query.eq("provincia", f.provincia);
+    // Comparacion contra el catalogo, no contra el valor de la URL: cualquier
+    // otra cosa en ?permuta= no filtra nada en vez de romper la query.
+    if (f.permuta === PERMUTA[0]) query = query.eq("acepta_permuta", true);
+    else if (f.permuta === PERMUTA[1]) query = query.eq("acepta_permuta", false);
 
     if (tope !== null) query = query.lte("precio", tope);
     if (minEstado) query = query.gte("estado", minEstado.min);
@@ -129,7 +134,7 @@ export async function obtenerMiPaleta(id: string): Promise<Paleta | null> {
     const r = await supabase
       .from("paletas")
       .select(
-        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, vence_at, marcas (nombre)",
+        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, acepta_permuta, estado_publicacion, vence_at, marcas (nombre)",
       )
       .eq("id", id)
       .eq("vendedor_id", user.id)
@@ -160,7 +165,7 @@ export async function listarMisPaletas(): Promise<Paleta[]> {
     supabase
       .from("paletas")
       .select(
-        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, estado_publicacion, vence_at, marcas (nombre), promociones (hasta)",
+        "id, vendedor_id, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, acepta_permuta, estado_publicacion, vence_at, marcas (nombre), promociones (hasta)",
       )
       .eq("vendedor_id", user.id)
       .neq("estado_publicacion", "eliminada")

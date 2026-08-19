@@ -40,6 +40,10 @@ export async function actualizar(
     fotos,
   };
 
+  // Checkbox: presente = marcado. No pasa por validarPaleta porque no hay valor
+  // invalido posible, solo esta o no esta.
+  const aceptaPermuta = fd.get("permuta") !== null;
+
   const campos = validarPaleta(datos);
   if (Object.keys(campos).length) return { campos };
 
@@ -63,6 +67,7 @@ export async function actualizar(
       ciudad: datos.ciudad,
       descripcion: datos.descripcion,
       fotos: datos.fotos,
+      acepta_permuta: aceptaPermuta,
     })
     .eq("id", id)
     .eq("vendedor_id", user.id);

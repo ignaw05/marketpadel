@@ -13,6 +13,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "UIpadel/**",
+    // Worktrees que crea Claude Code: son copias del repo, se lintean solas
+    // cuando corresponde. Sin esto el lint del repo falla por codigo que no es
+    // del repo (y "UIpadel/**" no las alcanza: solo matchea en la raiz).
+    ".claude/worktrees/**",
   ]),
 ]);
 

@@ -7,6 +7,7 @@ const SECCIONES = [
   { href: "/admin", texto: "Resumen" },
   { href: "/admin/publicaciones", texto: "Publicaciones" },
   { href: "/admin/usuarios", texto: "Usuarios" },
+  { href: "/admin/sponsors", texto: "Sponsors" },
 ];
 
 export function NavAdmin() {
