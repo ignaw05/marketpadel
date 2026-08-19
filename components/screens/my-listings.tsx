@@ -48,6 +48,7 @@ function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boo
           src={foto(paleta)}
           alt={`${paleta.marca} ${paleta.modelo}`}
           sizes="64px"
+          mini
           className="object-contain p-1"
         />
       </div>

@@ -31,6 +31,7 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
           src={foto(paleta)}
           alt={`${paleta.marca} ${paleta.modelo}`}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          mini
           priority={priority}
           className="object-cover transition-transform duration-200 group-hover:scale-[1.03]"
         />
