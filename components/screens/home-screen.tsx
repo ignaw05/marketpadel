@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { SearchX, PackageOpen, Plus } from "lucide-react";
+import { SearchX, PackageOpen, Plus, Receipt } from "lucide-react";
 import { PaletaCard } from "../paleta-card";
 import { Filtros } from "../filtros";
 import { Paginacion } from "../paginacion";
@@ -111,25 +111,34 @@ export function HomeScreen({
     <div className="mx-auto max-w-[1280px] px-4 py-5 md:px-6">
       {/* Unico h1 de la home. Sin esto la portada no tiene una sola linea de
           texto propio: es una grilla de fotos y nada mas. */}
-      <header className="mb-4">
-        <h1
-          className="text-[20px] md:text-[26px]"
-          style={{
-            color: "#14171A",
-            fontWeight: 800,
-            letterSpacing: "-0.02em",
-          }}
+      <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1
+            className="text-[20px] md:text-[26px]"
+            style={{
+              color: "#14171A",
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {tituloFeed(filtros)}
+          </h1>
+          <p
+            className="mt-1 max-w-[70ch] text-[14px] leading-relaxed"
+            style={{ color: "#5B6470" }}
+          >
+            Comprá y vendé paletas de pádel usadas entre jugadores. Publicar es
+            gratis, ves el estado real de cada paleta y hablás directo con el
+            vendedor por WhatsApp.
+          </p>
+        </div>
+        <Link
+          href="/ventas"
+          className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{ border: "1px solid #E6E4DF", color: "#14171A", fontWeight: 600, outlineColor: "#057305" }}
         >
-          {tituloFeed(filtros)}
-        </h1>
-        <p
-          className="mt-1 max-w-[70ch] text-[14px] leading-relaxed"
-          style={{ color: "#5B6470" }}
-        >
-          Comprá y vendé paletas de pádel usadas entre jugadores. Publicar es
-          gratis, ves el estado real de cada paleta y hablás directo con el
-          vendedor por WhatsApp.
-        </p>
+          <Receipt size={14} aria-hidden /> Historial de ventas
+        </Link>
       </header>
 
       <div className="flex flex-col md:flex-row md:gap-8">
