@@ -19,9 +19,10 @@ export async function generateMetadata({
 
   // Solo la inicial en minuscula: un toLowerCase() entero se come Bullpadel,
   // Córdoba y Argentina, que son justo las palabras que se buscan.
+  // Corta a ~140: mas largo que eso Google lo trunca con puntos suspensivos.
   const descripcion = `Comprá y vendé ${titulo[0].toLowerCase()}${titulo.slice(
     1,
-  )}. Publicar es gratis, hablás directo con el vendedor por WhatsApp y ves el estado real de cada paleta antes de comprar.`;
+  )}. Publicar es gratis y hablás directo con el vendedor por WhatsApp.`;
 
   return {
     // El template del layout ya agrega "| Paletita": ponerlo aca lo duplica.
@@ -78,11 +79,16 @@ export default async function Page({
       },
       "query-input": "required name=search_term_string",
     },
+    // La descripcion y el areaServed son lo que citan los motores de IA cuando
+    // les preguntan donde comprar una paleta usada en Argentina.
     publisher: {
       "@type": "Organization",
       name: "Paletita",
       url: sitio,
       logo: `${sitio}/logo.png`,
+      description:
+        "Marketplace argentino de paletas de pádel usadas. Publicar es gratis, no hay comisión por venta y el contacto entre comprador y vendedor es directo por WhatsApp.",
+      areaServed: { "@type": "Country", name: "Argentina" },
     },
   };
 
