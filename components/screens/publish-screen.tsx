@@ -92,10 +92,14 @@ function Campo({
 const MAX_BYTES_ORIGEN = 25 * 1024 * 1024;
 
 /**
- * Reencoda a WebP en un canvas: una foto de celular pasa de ~5 MB a ~200 KB,
- * que con datos moviles es la diferencia entre subir y abandonar.
- * ponytail: sin libreria de compresion. Si el navegador no encoda WebP, devuelve
- * la original y sigue andando.
+ * Reencoda en un canvas: una foto de celular pasa de ~5 MB a ~200 KB, que con
+ * datos moviles es la diferencia entre subir y abandonar.
+ *
+ * WebP primero y JPEG despues: toBlob cae a PNG cuando no sabe encodar el tipo
+ * pedido, y ese PNG pesa mas que el original. Safari viejo y varios Android no
+ * encodan WebP, y ahi el JPEG es lo que salva el resize — sin el fallback la
+ * foto se subia cruda, 4032px y 2,4 MB, porque el unico camino era WebP o nada.
+ * ponytail: sin libreria de compresion, el canvas ya sabe hacer las dos cosas.
  */
 async function encodar(bitmap: ImageBitmap, max: number): Promise<Blob | null> {
   const { ancho, alto } = medidas(bitmap.width, bitmap.height, max);
@@ -104,19 +108,23 @@ async function encodar(bitmap: ImageBitmap, max: number): Promise<Blob | null> {
   canvas.height = alto;
   canvas.getContext("2d")?.drawImage(bitmap, 0, 0, ancho, alto);
 
-  const blob = await new Promise<Blob | null>((listo) =>
-    canvas.toBlob(listo, "image/webp", 0.82),
-  );
-  // toBlob cae a PNG cuando no sabe encodar el tipo pedido, y ese PNG pesa mas
-  // que la foto original.
-  return blob?.type === "image/webp" ? blob : null;
+  for (const tipo of ["image/webp", "image/jpeg"]) {
+    const blob = await new Promise<Blob | null>((listo) =>
+      canvas.toBlob(listo, tipo, 0.82),
+    );
+    if (blob?.type === tipo) return blob;
+  }
+  return null;
 }
+
+const EXT: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg" };
 
 async function achicar(file: File, bitmap: ImageBitmap): Promise<File> {
   const blob = await encodar(bitmap, MAX_LADO);
+  // El original solo gana si ya venia mas chico que lo que sabemos generar.
   if (!blob || blob.size >= file.size) return file;
-  return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", {
-    type: "image/webp",
+  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.${EXT[blob.type]}`, {
+    type: blob.type,
   });
 }
 
