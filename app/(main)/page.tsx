@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { HomeScreen } from "@/components/screens/home-screen";
+import { FAQ } from "@/components/sobre-paletita";
 import { listarPaletas, listarMarcas } from "@/lib/paletas-db";
 import {
+  CLAVES_FILTRO,
   canonicaFeed,
   paginaActual,
   tituloFeed,
@@ -56,6 +58,8 @@ export default async function Page({
   searchParams: Promise<FiltrosFeed>;
 }) {
   const filtros = await searchParams;
+  const pagina = paginaActual(filtros.pagina);
+  const buscando = CLAVES_FILTRO.some((k) => filtros[k]) || pagina > 1;
 
   const [{ paletas, hayMas }, marcas] = await Promise.all([
     listarPaletas(filtros),
@@ -91,17 +95,35 @@ export default async function Page({
     },
   };
 
+  // Solo en la portada limpia: repetido en cada faceta serian las mismas
+  // preguntas en /?marca=Nox y en /?provincia=Córdoba, contenido duplicado.
+  const faqLd = !buscando && {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ.map(({ pregunta, respuesta }) => ({
+      "@type": "Question",
+      name: pregunta,
+      acceptedAnswer: { "@type": "Answer", text: respuesta },
+    })),
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
       <HomeScreen
         paletas={paletas}
         marcas={marcas.map((m) => m.nombre)}
         filtros={filtros}
-        pagina={paginaActual(filtros.pagina)}
+        pagina={pagina}
         hayMas={hayMas}
       />
     </>
