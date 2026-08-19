@@ -189,3 +189,34 @@ export async function listarUsuariosAdmin(
     hayMas: filas.length > POR_PAGINA_ADMIN,
   };
 }
+
+// ---------------------------------------------------------------- sponsors
+
+export type SponsorAdmin = {
+  id: string;
+  nombre: string;
+  logo_url: string;
+  link: string | null;
+  orden: number;
+  activo: boolean;
+  created_at: string;
+};
+
+/**
+ * Todos los sponsors, activos y desactivados. No sirve listarSponsors() de
+ * lib/sponsors-db: esa va con el cliente publico y la policy de RLS le esconde
+ * los inactivos, que son justo los que el panel tiene que poder reactivar.
+ */
+export async function listarSponsorsAdmin(): Promise<SponsorAdmin[]> {
+  const data = await conReintento(() =>
+    admin()
+      .from("sponsors")
+      .select("id, nombre, logo_url, link, orden, activo, created_at")
+      // Los desactivados al final: el panel muestra primero lo que se esta viendo.
+      .order("activo", { ascending: false })
+      .order("orden")
+      .order("created_at"),
+  );
+
+  return (data ?? []) as unknown as SponsorAdmin[];
+}
