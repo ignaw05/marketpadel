@@ -14,11 +14,12 @@ import {
   type Venta,
   type FiltrosFeed,
 } from "@/lib/paletas";
+import { esPro } from "@/lib/pro";
 import { limpiarBusqueda } from "@/lib/validar";
 import { conReintento } from "@/lib/reintentar";
 
 const VISTA =
-  "id, vendedor_id, marca, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, acepta_permuta, promocionada";
+  "id, vendedor_id, marca, modelo, forma, anio, estado, precio, provincia, ciudad, descripcion, fotos, visitas, acepta_permuta, promocionada, vendedor_pro";
 
 /**
  * Una pagina del feed. Los filtros se aplican en la query, o sea contra el
@@ -92,7 +93,9 @@ async function obtenerPaletaDb(
   const data = await conReintento(async () => {
     const r = await supabase
       .from("paletas_publicas")
-      .select(`${VISTA}, perfiles!vendedor_id (nombre, apellido, whatsapp, created_at)`)
+      .select(
+        `${VISTA}, perfiles!vendedor_id (nombre, apellido, whatsapp, created_at, pro_hasta)`,
+      )
       .eq("id", id)
       .maybeSingle();
 
@@ -109,6 +112,7 @@ async function obtenerPaletaDb(
       apellido: string;
       whatsapp: string | null;
       created_at: string;
+      pro_hasta: string | null;
     } | null;
   };
 
@@ -119,6 +123,7 @@ async function obtenerPaletaDb(
       apellido: perfiles?.apellido || "",
       whatsapp: perfiles?.whatsapp ?? null,
       miembroDesde: new Date(perfiles?.created_at ?? Date.now()).getFullYear(),
+      pro: esPro(perfiles?.pro_hasta),
     },
   };
 }

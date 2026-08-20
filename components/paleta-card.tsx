@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Diamond, Droplet, Circle, Star } from "lucide-react";
+import { MapPin, Diamond, Droplet, Circle, Star, BadgeCheck } from "lucide-react";
 import { ImageWithFallback } from "./image-with-fallback";
 import { Paleta, Forma, formatPrecio, foto } from "@/lib/paletas";
 
@@ -49,6 +49,18 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
         >
           {paleta.estado}/10
         </span>
+        {/* Superpuesta y no en el flujo: asi la card de un Pro mide exactamente
+            lo mismo que las demas y la grilla no se descuadra. */}
+        {paleta.vendedor_pro && (
+          <p
+            className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 px-2.5 py-1.5 text-[11px]"
+            style={{ background: "rgba(5,115,5,0.94)", color: "#FFFFFF", fontWeight: 700 }}
+          >
+            <BadgeCheck size={13} aria-hidden className="shrink-0" />
+            <span className="truncate">{paleta.vendedor_pro}</span>
+            <span className="sr-only">— Vendedor Pro</span>
+          </p>
+        )}
       </div>
       <div className="p-3.5">
         <p className="truncate text-[14px]" style={{ color: "#14171A", fontWeight: 600 }}>

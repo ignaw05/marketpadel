@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, MessageCircle, Eye, Star } from "lucide-react";
+import { MapPin, MessageCircle, Eye, Star, BadgeCheck } from "lucide-react";
 import { Galeria } from "./galeria";
 import { PromocionarDialog } from "./promocionar-dialog";
 import { Paleta, Vendedor, formatPrecio, estadoLabel } from "@/lib/paletas";
@@ -93,9 +93,26 @@ export function DetailView({
             <p className="truncate text-[14px]" style={{ color: "#14171A", fontWeight: 600 }}>
               {vendedor.nombre} {vendedor.apellido}
             </p>
-            <p className="text-[12px]" style={{ color: "#5B6470" }}>
-              Miembro desde {vendedor.miembroDesde}
-            </p>
+            {/* El badge es del vendedor, no de la paleta: por eso va acá y no
+                arriba con "Destacada". */}
+            {vendedor.pro ? (
+              <Link
+                href="/vendedores"
+                className="mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{
+                  background: "rgba(5,115,5,0.10)",
+                  color: "#057305",
+                  fontWeight: 700,
+                  outlineColor: "#057305",
+                }}
+              >
+                <BadgeCheck size={11} aria-hidden /> Vendedor Pro
+              </Link>
+            ) : (
+              <p className="text-[12px]" style={{ color: "#5B6470" }}>
+                Miembro desde {vendedor.miembroDesde}
+              </p>
+            )}
           </div>
           <p
             className="ml-auto flex shrink-0 items-center gap-1 text-[12px]"

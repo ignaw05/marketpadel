@@ -21,6 +21,11 @@ export type Paleta = {
   visitas: number;
   acepta_permuta: boolean;
   promocionada?: boolean;
+  /**
+   * Nombre del vendedor si tiene el plan Pro vigente, null si no. Una sola
+   * columna para las dos preguntas: si lleva cinta, y qué dice la cinta.
+   */
+  vendedor_pro?: string | null;
   estado_publicacion?: EstadoPublicacion;
   /** Solo viene en las queries del dueño: la vista publica ya filtra por fecha. */
   vence_at?: string;
@@ -31,6 +36,7 @@ export type Vendedor = {
   apellido: string;
   whatsapp: string | null;
   miembroDesde: number;
+  pro: boolean;
 };
 
 export type Venta = {
