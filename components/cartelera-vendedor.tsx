@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BadgeCheck, Star } from "lucide-react";
 import { ImageWithFallback } from "./image-with-fallback";
-import { type VendedorPro } from "@/lib/pro-db";
+import { nombrePublico, type VendedorPro } from "@/lib/pro-db";
 import { type Paleta, formatPrecio, foto } from "@/lib/paletas";
 
 function Mini({ paleta }: { paleta: Paleta }) {
@@ -44,11 +44,16 @@ function Mini({ paleta }: { paleta: Paleta }) {
 }
 
 export function CarteleraVendedor({ vendedor }: { vendedor: VendedorPro }) {
-  const nombre = `${vendedor.nombre} ${vendedor.apellido}`.trim();
-  const iniciales = `${vendedor.nombre[0] ?? ""}${vendedor.apellido[0] ?? ""}`;
+  // El negocio le gana al nombre: si tiene local, es la marca lo que el
+  // comprador reconoce. Misma regla que la cinta del feed.
+  const nombre = nombrePublico(vendedor);
+  const iniciales = vendedor.negocio?.trim()
+    ? vendedor.negocio.trim().slice(0, 2).toUpperCase()
+    : `${vendedor.nombre[0] ?? ""}${vendedor.apellido[0] ?? ""}`;
   const total = vendedor.paletas.length;
-  // La provincia sale de lo que publica: `perfiles` no tiene ubicación propia.
-  const provincia = vendedor.paletas[0]?.provincia;
+  // Del perfil, no de la primera paleta: donde está el vendedor no es lo mismo
+  // que dónde está la paleta que publicó.
+  const provincia = vendedor.provincia ?? vendedor.paletas[0]?.provincia;
 
   return (
     <section

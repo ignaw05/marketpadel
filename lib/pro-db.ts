@@ -8,8 +8,18 @@ export type VendedorPro = {
   nombre: string;
   apellido: string;
   avatar_url: string | null;
+  /** Nombre del local. Si está, es lo que ve el comprador en vez del nombre. */
+  negocio: string | null;
+  provincia: string | null;
   paletas: Paleta[];
 };
+
+/** Con quién cree el comprador que habla. Misma regla que la vista para la cinta. */
+export const nombrePublico = (v: {
+  negocio: string | null;
+  nombre: string;
+  apellido: string;
+}): string => v.negocio?.trim() || `${v.nombre} ${v.apellido}`.trim() || "Vendedor";
 
 /** Lo que muestra cada cartelera. Menos columnas que el feed: no hay descripcion ni ciudad. */
 const CARTELERA =
@@ -35,7 +45,7 @@ export async function listarVendedoresPro(tope?: number): Promise<VendedorPro[]>
       // Antiguedad en Paletita. La fecha de alta de la suscripcion seria lo
       // obvio, pero `suscripciones` tiene RLS de "solo las propias" y un
       // visitante anonimo no veria ninguna.
-      .select("id, nombre, apellido, avatar_url")
+      .select("id, nombre, apellido, avatar_url, negocio, provincia")
       .order("created_at")
       .order("id");
 
@@ -73,6 +83,8 @@ export async function listarVendedoresPro(tope?: number): Promise<VendedorPro[]>
       nombre: (p.nombre as string) || "Vendedor",
       apellido: (p.apellido as string) || "",
       avatar_url: (p.avatar_url as string | null) ?? null,
+      negocio: (p.negocio as string | null) ?? null,
+      provincia: (p.provincia as string | null) ?? null,
       paletas: porVendedor.get(p.id as string) ?? [],
     }))
     .filter((v) => v.paletas.length > 0);
