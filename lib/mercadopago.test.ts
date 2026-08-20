@@ -3,12 +3,15 @@ import { test, expect } from "vitest";
 import {
   armarDonacion,
   armarReferencia,
+  armarSuscripcion,
   firmaValida,
   leerDonacion,
   leerReferencia,
+  leerSuscripcion,
   traducirEstado,
 } from "./mercadopago";
 import { PLANES } from "./paletas";
+import { PLAN_PRO } from "./pro";
 
 // --- firma del webhook ----------------------------------------------------
 // Es la unica barrera del endpoint: es publico y cualquiera puede postear
@@ -155,4 +158,48 @@ test("el webhook de promociones no puede actuar sobre una donacion", () => {
 
 test("leerDonacion no acepta una referencia de promocion", () => {
   expect(leerDonacion(armarReferencia(PALETA, 30))).toBeNull();
+});
+
+// --- referencia de la suscripcion Pro -------------------------------------
+// Lleva el perfil adentro por lo mismo que la donacion: el webhook no tiene
+// sesion, y el perfil es lo unico que decide a quien se le activa el plan.
+
+const PERFIL = "33333333-3333-3333-3333-333333333333";
+
+test("armarSuscripcion y leerSuscripcion son ida y vuelta", () => {
+  expect(leerSuscripcion(armarSuscripcion(PERFIL))).toEqual({ perfilId: PERFIL });
+});
+
+test("leerSuscripcion devuelve null ante cualquier basura", () => {
+  for (const ref of [
+    undefined,
+    null,
+    "",
+    ":",
+    "pro",
+    "pro:",
+    `:${PERFIL}`,
+    `pro:${PERFIL}:sobra`,
+    `donacion:${PALETA}:${VENDEDOR}`,
+    `${PALETA}:30`,
+  ]) {
+    expect(leerSuscripcion(ref)).toBeNull();
+  }
+});
+
+test("el webhook de promociones no puede actuar sobre un pago del plan", () => {
+  // Si leerReferencia aceptara esto, pagar la suscripcion promocionaria una
+  // paleta cuyo id seria el uuid del perfil.
+  expect(leerReferencia(armarSuscripcion(PERFIL))).toBeNull();
+});
+
+test("leerSuscripcion no acepta ninguna de las otras dos referencias", () => {
+  expect(leerSuscripcion(armarReferencia(PALETA, 15))).toBeNull();
+  expect(leerSuscripcion(armarDonacion(PALETA, VENDEDOR))).toBeNull();
+});
+
+test("el monto cobrado tiene que ser el del plan Pro", () => {
+  // misma comparacion que hace el webhook antes de activar
+  expect(10000 === PLAN_PRO.precio).toBe(true);
+  expect(3000 === PLAN_PRO.precio).toBe(false); // pago una promocion suelta
 });

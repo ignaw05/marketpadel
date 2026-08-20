@@ -86,3 +86,17 @@ export function leerDonacion(
   if (tipo !== "donacion" || !paletaId || !vendedorId || resto.length) return null;
   return { paletaId, vendedorId };
 }
+
+/**
+ * La suscripcion Pro lleva el perfil adentro por el mismo motivo que la
+ * donacion: el webhook no tiene sesion. `leerReferencia` la rechaza sola
+ * (Number(<uuid>) no es entero), asi que un pago del plan no puede terminar
+ * promocionando una paleta.
+ */
+export const armarSuscripcion = (perfilId: string): string => `pro:${perfilId}`;
+
+export function leerSuscripcion(ref?: string | null): { perfilId: string } | null {
+  const [tipo, perfilId, ...resto] = (ref ?? "").split(":");
+  if (tipo !== "pro" || !perfilId || resto.length) return null;
+  return { perfilId };
+}
