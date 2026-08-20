@@ -31,9 +31,12 @@ function Seccion({ titulo, children }: { titulo: string; children: React.ReactNo
 export function CuentaScreen({
   email,
   perfil,
+  plan,
 }: {
   email: string;
   perfil: { nombre: string; apellido: string; whatsapp: string };
+  /** El estado del plan Pro. Llega ya renderizado: esta pantalla no toca la base. */
+  plan?: React.ReactNode;
 }) {
   const [datos, guardar] = useActionState<PerfilState, FormData>(guardarPerfil, {});
   const [clave, cambiar] = useActionState<PasswordState, FormData>(cambiarPassword, {});
@@ -45,6 +48,8 @@ export function CuentaScreen({
   return (
     <div className="mx-auto max-w-[560px] space-y-4 px-4 py-6 md:px-6">
       <h1 style={{ color: "#14171A", fontWeight: 700, fontSize: 24 }}>Mi cuenta</h1>
+
+      {plan}
 
       <Seccion titulo="Mis datos">
         <form action={guardar} className="space-y-4" noValidate>

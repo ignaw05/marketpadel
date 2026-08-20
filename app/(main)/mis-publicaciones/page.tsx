@@ -1,5 +1,6 @@
 import { MyListings } from "@/components/screens/my-listings";
 import { listarMisPaletas } from "@/lib/paletas-db";
+import { miPlan } from "@/lib/pro-db";
 
 export default async function Page({
   searchParams,
@@ -9,10 +10,12 @@ export default async function Page({
     pago?: string;
     editada?: string;
     donacion?: string;
+    credito?: string;
   }>;
 }) {
-  const [paletas, { publicada, pago, editada, donacion }] = await Promise.all([
+  const [paletas, plan, { publicada, pago, editada, donacion, credito }] = await Promise.all([
     listarMisPaletas(),
+    miPlan(),
     searchParams,
   ]);
   return (
@@ -22,6 +25,8 @@ export default async function Page({
       pago={pago}
       editada={editada === "1"}
       donacion={donacion}
+      credito={credito}
+      plan={plan}
     />
   );
 }

@@ -1,8 +1,19 @@
 import Link from "next/link";
-import { PackageOpen, Plus, Eye, CheckCircle2, Star, AlertCircle, Receipt, Heart } from "lucide-react";
+import {
+  PackageOpen,
+  Plus,
+  Eye,
+  CheckCircle2,
+  Star,
+  AlertCircle,
+  Receipt,
+  Heart,
+  BadgeCheck,
+} from "lucide-react";
 import { ImageWithFallback } from "../image-with-fallback";
 import { AccionesPaleta } from "../acciones-paleta";
 import { PromocionarDialog } from "../promocionar-dialog";
+import { UsarCredito } from "../usar-credito";
 import { Renovar } from "../renovar";
 import { MarcarVendida } from "../marcar-vendida";
 import { Metric } from "../metric";
@@ -14,6 +25,8 @@ import {
   puedeRenovar,
   vencida,
 } from "@/lib/paletas";
+import { PLAN_PRO, avisoPro, creditosRestantes } from "@/lib/pro";
+import { type MiPlan } from "@/lib/pro-db";
 
 const BADGE = {
   activa: { texto: "Activa", fondo: "rgba(5,115,5,0.1)", color: "#057305" },
@@ -26,7 +39,16 @@ const BADGE = {
 /** El vencimiento solo cambia algo mientras la publicacion sigue en juego. */
 const EN_JUEGO = ["activa", "pausada"];
 
-function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boolean }) {
+function Row({
+  paleta,
+  recienPublicada,
+  conCredito,
+}: {
+  paleta: Paleta;
+  recienPublicada: boolean;
+  /** El vendedor tiene plan vigente y le quedan créditos sin usar. */
+  conCredito: boolean;
+}) {
   const estado = paleta.estado_publicacion ?? "activa";
   const expirada = vencida(paleta);
   const enJuego = EN_JUEGO.includes(estado);
@@ -82,12 +104,15 @@ function Row({ paleta, recienPublicada }: { paleta: Paleta; recienPublicada: boo
               <Star size={11} aria-hidden /> Promocionada
             </span>
           ) : estado === "activa" && !expirada ? (
-            <PromocionarDialog
-              id={paleta.id}
-              titulo={`${paleta.marca} ${paleta.modelo}`}
-              auto={recienPublicada}
-              className="inline-flex items-center gap-1 rounded-full border border-[#057305] px-2.5 py-0.5 text-[12px] font-semibold text-[#057305] hover:bg-[rgba(5,115,5,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#057305]"
-            />
+            <>
+              {conCredito && <UsarCredito id={paleta.id} titulo={titulo} />}
+              <PromocionarDialog
+                id={paleta.id}
+                titulo={`${paleta.marca} ${paleta.modelo}`}
+                auto={recienPublicada}
+                className="inline-flex items-center gap-1 rounded-full border border-[#057305] px-2.5 py-0.5 text-[12px] font-semibold text-[#057305] hover:bg-[rgba(5,115,5,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#057305]"
+              />
+            </>
           ) : null}
           {enJuego && <MarcarVendida id={paleta.id} titulo={titulo} />}
           <span className="flex items-center gap-1">
@@ -163,6 +188,30 @@ const AVISO_DONACION = {
   },
 } as const;
 
+// El crédito sí se resuelve en el momento: lo inserta la propia action, no hay
+// pago de por medio ni webhook que esperar.
+const AVISO_CREDITO = {
+  exito: {
+    texto: `Listo, usaste una promoción del plan. La publicación queda destacada ${PLAN_PRO.diasPromo} días.`,
+    fondo: "rgba(5,115,5,0.08)",
+    color: "#057305",
+    alerta: false,
+  },
+  "sin-creditos": {
+    texto: `Ya usaste las ${PLAN_PRO.creditos} promociones de este mes. Vuelven a ${PLAN_PRO.creditos} cuando renueves, y mientras tanto podés promocionar pagando.`,
+    fondo: "#F2F1ED",
+    color: "#14171A",
+    alerta: false,
+  },
+  error: {
+    texto:
+      "No pudimos usar la promoción. Revisá que la publicación esté activa, sin vencer y sin otra promoción corriendo.",
+    fondo: "rgba(212,24,61,0.08)",
+    color: "#D4183D",
+    alerta: true,
+  },
+} as const;
+
 type Aviso = { texto: string; fondo: string; color: string; alerta: boolean };
 
 function Banner({ aviso, Icono }: { aviso: Aviso; Icono: typeof Star }) {
@@ -188,6 +237,8 @@ export function MyListings({
   editada,
   pago,
   donacion,
+  credito,
+  plan,
 }: {
   paletas: Paleta[];
   /** Id de la que se acaba de publicar: abre sola la invitacion a promocionar. */
@@ -195,9 +246,17 @@ export function MyListings({
   editada?: boolean;
   pago?: string;
   donacion?: string;
+  credito?: string;
+  plan: MiPlan;
 }) {
   const aviso = AVISO_PAGO[pago as keyof typeof AVISO_PAGO];
   const gracias = AVISO_DONACION[donacion as keyof typeof AVISO_DONACION];
+  const canje = AVISO_CREDITO[credito as keyof typeof AVISO_CREDITO];
+  const quedan = creditosRestantes(plan.usados);
+  const conCredito = !!plan.suscripcionId && quedan > 0;
+  // Sin el condicional de esPro: el aviso que más importa es justo el del plan
+  // que ya venció, y ahí esPro devuelve false.
+  const avisoVencimiento = avisoPro(plan.hasta);
   // Una vencida no cuenta como activa: no la ve nadie.
   const activas = paletas.filter(
     (p) => p.estado_publicacion === "activa" && !vencida(p),
@@ -242,6 +301,30 @@ export function MyListings({
 
       {gracias && <Banner aviso={gracias} Icono={Heart} />}
 
+      {canje && <Banner aviso={canje} Icono={BadgeCheck} />}
+
+      {/* El aviso de vencimiento del plan también acá y no solo en /cuenta: esta
+          es la pantalla a la que el vendedor entra, no aquella. */}
+      {avisoVencimiento && (
+        <p
+          role="alert"
+          className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[14px] p-3 text-[14px]"
+          style={{ background: "rgba(212,24,61,0.08)", color: "#D4183D", lineHeight: 1.5 }}
+        >
+          <AlertCircle size={16} className="shrink-0" aria-hidden />
+          {avisoVencimiento === "vencido"
+            ? "Se venció tu plan Pro: el distintivo ya no aparece en tus paletas."
+            : "Tu plan Pro vence en pocos días."}
+          <Link
+            href="/cuenta"
+            className="underline focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ fontWeight: 600, outlineColor: "#D4183D" }}
+          >
+            Renovar
+          </Link>
+        </p>
+      )}
+
       <div className="mt-4 grid grid-cols-3 gap-3">
         <Metric label="Activas" value={String(activas)} />
         <Metric label="Vendidas" value={String(vendidas)} />
@@ -276,7 +359,12 @@ export function MyListings({
           </div>
         ) : (
           paletas.map((p) => (
-            <Row key={p.id} paleta={p} recienPublicada={p.id === publicada} />
+            <Row
+              key={p.id}
+              paleta={p}
+              recienPublicada={p.id === publicada}
+              conCredito={conCredito}
+            />
           ))
         )}
       </div>
