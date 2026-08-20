@@ -6,6 +6,17 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  experimental: {
+    serverActions: {
+      // Default es 1 MB: una foto de logo sacada directo de la camara del
+      // celular lo supera facil, antes de que el action llegue a correr su
+      // propia validacion de 500 KB (ver MAX_BYTES_LOGO en
+      // app/admin/sponsors/actions.ts). Sin este margen, Next corta la
+      // request con un 413 crudo que cae en error.tsx en vez del mensaje
+      // "Pesa mas de 500 KB" del formulario.
+      bodySizeLimit: "8mb",
+    },
+  },
   images: {
     // Las fotos ya se suben optimizadas: WebP de 1600px mas su variante -mini de
     // 400px (ver achicar/encodar en publish-screen). Volver a pasarlas por el

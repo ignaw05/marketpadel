@@ -37,6 +37,10 @@ function Item({ s, copia }: { s: Sponsor; copia?: boolean }) {
           // La copia no es enfocable: tabular por la tira no puede pasar dos
           // veces por el mismo sponsor.
           tabIndex={copia ? -1 : undefined}
+          // target="_blank" no le saca el foco al link al abrir la pestaña
+          // nueva: sin este blur, focus-within deja la tira pausada para
+          // siempre despues de tocar un logo.
+          onClick={(e) => e.currentTarget.blur()}
           className="flex min-h-[44px] items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2"
           style={{ outlineColor: "#057305" }}
         >
