@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { LogOut } from "lucide-react";
 import { Aviso, Field, Submit } from "../campos";
+import { CamposVendedor } from "../campos-vendedor";
 import { cerrarSesion } from "@/app/auth/actions";
 import {
   guardarPerfil,
@@ -34,7 +35,13 @@ export function CuentaScreen({
   plan,
 }: {
   email: string;
-  perfil: { nombre: string; apellido: string; whatsapp: string };
+  perfil: {
+    nombre: string;
+    apellido: string;
+    whatsapp: string;
+    negocio: string;
+    provincia: string;
+  };
   /** El estado del plan Pro. Llega ya renderizado: esta pantalla no toca la base. */
   plan?: React.ReactNode;
 }) {
@@ -92,6 +99,13 @@ export function CuentaScreen({
             defaultValue={v.whatsapp}
             error={e.whatsapp}
             ayuda="Es el número al que te escriben los compradores."
+          />
+
+          <CamposVendedor
+            negocio={v.negocio}
+            provincia={v.provincia}
+            errorNegocio={e.negocio}
+            errorProvincia={e.provincia}
           />
 
           <Submit cargando="Guardando…">Guardar cambios</Submit>

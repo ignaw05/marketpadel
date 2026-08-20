@@ -13,7 +13,13 @@ import {
 export type PerfilState = {
   error?: string;
   campos?: Errores<CampoPerfil>;
-  valores?: { nombre: string; apellido: string; whatsapp: string };
+  valores?: {
+    nombre: string;
+    apellido: string;
+    whatsapp: string;
+    negocio: string;
+    provincia: string;
+  };
   aviso?: string;
 };
 
@@ -33,6 +39,8 @@ export async function guardarPerfil(
     nombre: texto(formData, "nombre"),
     apellido: texto(formData, "apellido"),
     whatsapp: texto(formData, "whatsapp"),
+    negocio: texto(formData, "negocio"),
+    provincia: texto(formData, "provincia"),
   };
 
   const campos = validarPerfil(valores);
@@ -45,7 +53,12 @@ export async function guardarPerfil(
   if (!user) return { error: "Se cerró tu sesión. Ingresá de nuevo.", valores };
 
   // El id sale de la sesion, nunca del form. La RLS igual solo deja el propio.
-  const { error } = await supabase.from("perfiles").update(valores).eq("id", user.id);
+  const { error } = await supabase
+    .from("perfiles")
+    // negocio vacio va como null y no como '': null es "no tengo local", y ''
+    // seria un local sin nombre que la cinta tendria que dibujar igual.
+    .update({ ...valores, negocio: valores.negocio || null })
+    .eq("id", user.id);
   if (error) return { error: "No pudimos guardar los cambios. Probá de nuevo.", valores };
 
   revalidatePath("/", "layout");

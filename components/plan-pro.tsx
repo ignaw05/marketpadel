@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BadgeCheck, AlertCircle } from "lucide-react";
 import { BotonRenovarPro } from "./boton-pro";
+import { IdentidadPro } from "./identidad-pro";
 import { type MiPlan } from "@/lib/pro-db";
 import { PLAN_PRO, avisoPro, creditosRestantes, esPro } from "@/lib/pro";
 import { formatPrecio } from "@/lib/paletas";
@@ -50,7 +51,17 @@ function Dato({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-export function PlanPro({ plan, pago }: { plan: MiPlan; pago?: string }) {
+export function PlanPro({
+  plan,
+  pago,
+  negocio,
+  provincia,
+}: {
+  plan: MiPlan;
+  pago?: string;
+  negocio: string;
+  provincia: string;
+}) {
   const activo = esPro(plan.hasta);
   const aviso = avisoPro(plan.hasta);
   // Tres estados, no dos: al que dejó vencer el plan recién hay que decirle qué
@@ -193,6 +204,8 @@ export function PlanPro({ plan, pago }: { plan: MiPlan; pago?: string }) {
               Ver mi cartelera
             </Link>
           </div>
+
+          <IdentidadPro negocio={negocio} provincia={provincia} />
         </>
       )}
     </section>

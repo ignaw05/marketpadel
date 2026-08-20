@@ -16,7 +16,11 @@ export default async function Page({
   if (!user) redirect("/auth?next=/cuenta");
 
   const [{ data: perfil }, plan, { pro }] = await Promise.all([
-    supabase.from("perfiles").select("nombre, apellido, whatsapp").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("perfiles")
+      .select("nombre, apellido, whatsapp, negocio, provincia")
+      .eq("id", user.id)
+      .maybeSingle(),
     miPlan(),
     searchParams,
   ]);
@@ -28,8 +32,17 @@ export default async function Page({
         nombre: perfil?.nombre ?? "",
         apellido: perfil?.apellido ?? "",
         whatsapp: perfil?.whatsapp ?? "",
+        negocio: perfil?.negocio ?? "",
+        provincia: perfil?.provincia ?? "",
       }}
-      plan={<PlanPro plan={plan} pago={pro} />}
+      plan={
+        <PlanPro
+          plan={plan}
+          pago={pro}
+          negocio={perfil?.negocio ?? ""}
+          provincia={perfil?.provincia ?? ""}
+        />
+      }
     />
   );
 }

@@ -8,6 +8,7 @@ import { BASE, armarSuscripcion, mp } from "@/lib/mercadopago";
 import { miPlan } from "@/lib/pro-db";
 import { PLAN_PRO, creditosRestantes } from "@/lib/pro";
 import { promoVigente } from "@/lib/paletas";
+import { errorNegocio, errorProvincia } from "@/lib/validar";
 
 /** RLS ya limita a lo propio; igual filtramos por vendedor para no depender solo de eso. */
 async function sesion() {
@@ -17,6 +18,56 @@ async function sesion() {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Sesión vencida");
   return { supabase, uid: user.id };
+}
+
+export type IdentidadState = {
+  error?: string;
+  campos?: { negocio?: string; provincia?: string };
+  valores?: { negocio: string; provincia: string };
+  aviso?: string;
+};
+
+/**
+ * Negocio y provincia desde la tarjeta Pro. Son las mismas dos columnas que
+ * edita guardarPerfil en /cuenta, pero esta valida SOLO esos dos campos: pedirle
+ * al vendedor que reescriba su nombre y su whatsapp para cambiar el nombre del
+ * local seria absurdo.
+ *
+ * La regla de que es valido no se duplica: vive en errorNegocio/errorProvincia.
+ */
+export async function guardarIdentidad(
+  _prev: IdentidadState,
+  fd: FormData,
+): Promise<IdentidadState> {
+  const valores = {
+    negocio: String(fd.get("negocio") ?? "").trim(),
+    provincia: String(fd.get("provincia") ?? "").trim(),
+  };
+
+  const campos = {
+    ...(errorNegocio(valores.negocio) ? { negocio: errorNegocio(valores.negocio) } : null),
+    ...(errorProvincia(valores.provincia)
+      ? { provincia: errorProvincia(valores.provincia) }
+      : null),
+  };
+  if (Object.keys(campos).length) return { campos, valores };
+
+  const { supabase, uid } = await sesion();
+
+  const { error } = await supabase
+    .from("perfiles")
+    // null y no '': null es "no tengo local", y '' seria un local sin nombre que
+    // la cinta tendria que dibujar igual.
+    .update({ negocio: valores.negocio || null, provincia: valores.provincia })
+    .eq("id", uid);
+
+  if (error) return { error: "No pudimos guardar los cambios. Probá de nuevo.", valores };
+
+  // El negocio sale en la cinta de TODAS sus publicaciones, no en una pantalla.
+  revalidatePath("/", "layout");
+  revalidatePath("/vendedores");
+
+  return { aviso: "Listo, actualizamos cómo te ven los compradores.", valores };
 }
 
 /**
