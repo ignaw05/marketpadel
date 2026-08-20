@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { HomeScreen } from "@/components/screens/home-screen";
+import { CartelerasHome } from "@/components/carteleras-home";
 import { FAQ } from "@/components/sobre-paletita";
 import { listarPaletas, listarMarcas } from "@/lib/paletas-db";
+import { listarVendedoresPro } from "@/lib/pro-db";
 import {
   CLAVES_FILTRO,
   canonicaFeed,
@@ -61,9 +63,12 @@ export default async function Page({
   const pagina = paginaActual(filtros.pagina);
   const buscando = CLAVES_FILTRO.some((k) => filtros[k]) || pagina > 1;
 
-  const [{ paletas, hayMas }, marcas] = await Promise.all([
+  const [{ paletas, hayMas }, marcas, vendedoresPro] = await Promise.all([
     listarPaletas(filtros),
     listarMarcas(),
+    // Solo en la portada limpia: con un filtro puesto el visitante busca algo
+    // concreto y las carteleras le empujarian el feed fuera de la pantalla.
+    buscando ? Promise.resolve([]) : listarVendedoresPro(2),
   ]);
 
   const sitio = process.env.NEXT_PUBLIC_BASE_URL!;
@@ -125,6 +130,7 @@ export default async function Page({
         filtros={filtros}
         pagina={pagina}
         hayMas={hayMas}
+        carteleras={<CartelerasHome vendedores={vendedoresPro} />}
       />
     </>
   );

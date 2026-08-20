@@ -102,12 +102,15 @@ export function HomeScreen({
   filtros,
   pagina,
   hayMas,
+  carteleras,
 }: {
   paletas: Paleta[];
   marcas: string[];
   filtros: FiltrosFeed;
   pagina: number;
   hayMas: boolean;
+  /** Adelanto de /vendedores. Llega ya renderizado: esta pantalla no toca la base. */
+  carteleras?: React.ReactNode;
 }) {
   // Solo las claves que la query mira. Con Object.values(), cualquier param de
   // paso (?error=..., ?utm_source=...) haria creer que hay filtros puestos y
@@ -166,6 +169,7 @@ export function HomeScreen({
         </aside>
 
         <div className="min-w-0 flex-1">
+          {!buscando && carteleras}
           {paletas.length === 0 ? (
             buscando ? (
               <SinResultados />
