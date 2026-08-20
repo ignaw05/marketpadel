@@ -1,8 +1,15 @@
 import { revalidatePath } from "next/cache";
 import { Payment } from "mercadopago";
-import { firmaValida, leerReferencia, mp, traducirEstado } from "@/lib/mercadopago";
+import {
+  firmaValida,
+  leerReferencia,
+  leerSuscripcion,
+  mp,
+  traducirEstado,
+} from "@/lib/mercadopago";
 import { admin } from "@/lib/supabase/admin";
 import { PLANES } from "@/lib/paletas";
+import { PLAN_PRO } from "@/lib/pro";
 
 /**
  * Lo unico que confirma un pago. La back_url a la que vuelve el navegador no
@@ -30,14 +37,45 @@ export async function POST(req: Request) {
     // El body solo trae el id. El estado se le pregunta a la API de MP.
     const pago = await new Payment(mp()).get({ id: dataId });
 
-    const ref = leerReferencia(pago.external_reference);
-    if (!ref) return new Response(null, { status: 200 });
-
     const monto = Math.round(pago.transaction_amount ?? 0);
     if (monto <= 0) {
       console.error("webhook MP: pago sin monto", { dataId });
       return new Response(null, { status: 200 });
     }
+
+    // La suscripcion Pro va primero y sale por su propia puerta: las tres
+    // referencias son mutuamente excluyentes (hay tests que lo prueban), pero
+    // asi ni siquiera se llega a mirar la de promociones.
+    const sus = leerSuscripcion(pago.external_reference);
+    if (sus) {
+      const activar = monto === PLAN_PRO.precio;
+      if (!activar) {
+        console.error("webhook MP: el monto no coincide con el plan Pro", { dataId, monto });
+      }
+
+      const { data: resultado, error } = await admin().rpc("registrar_suscripcion_pagada", {
+        p_mp_payment_id: String(pago.id),
+        p_perfil_id: sus.perfilId,
+        p_monto: monto,
+        p_estado: traducirEstado(pago.status),
+        p_activar: activar,
+      });
+
+      if (error) throw error;
+
+      if (resultado === "activada") {
+        // El plan cambia la cinta de TODAS sus publicaciones, no una sola: por
+        // eso el layout entero y no una ruta puntual.
+        revalidatePath("/", "layout");
+        revalidatePath("/vendedores");
+        revalidatePath("/cuenta");
+      }
+
+      return new Response(null, { status: 200 });
+    }
+
+    const ref = leerReferencia(pago.external_reference);
+    if (!ref) return new Response(null, { status: 200 });
 
     // El monto no puede venir del plan: hay que verificar lo que MP cobro de verdad.
     const plan = PLANES.find((p) => p.dias === ref.dias);
