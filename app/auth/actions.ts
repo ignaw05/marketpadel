@@ -56,11 +56,22 @@ export async function autenticar(
   // el usuario lo borro a proposito, que se lo diga la validacion.
   const whatsappPrefijo = texto(formData, "whatsapp_prefijo");
   const whatsappNumero = texto(formData, "whatsapp_numero");
+  // Opcional: solo lo llena quien tiene local.
+  const negocio = texto(formData, "negocio");
+  const provincia = texto(formData, "provincia");
 
-  const valores = { email, nombre, apellido, whatsappPrefijo, whatsappNumero };
+  const valores = {
+    email,
+    nombre,
+    apellido,
+    whatsappPrefijo,
+    whatsappNumero,
+    negocio,
+    provincia,
+  };
 
   const campos = validarAuth(
-    { email, password, nombre, apellido, whatsappPrefijo, whatsappNumero },
+    { email, password, nombre, apellido, whatsappPrefijo, whatsappNumero, negocio, provincia },
     modo,
   );
   if (Object.keys(campos).length) return { campos, valores };
@@ -94,6 +105,8 @@ export async function autenticar(
           nombre,
           apellido,
           whatsapp: armarWhatsapp(whatsappPrefijo, whatsappNumero),
+          negocio,
+          provincia,
         },
       },
     });

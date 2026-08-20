@@ -14,6 +14,7 @@ import {
   ROJO,
   VERDE,
 } from "../campos";
+import { CamposVendedor } from "../campos-vendedor";
 import {
   autenticar,
   reenviarConfirmacion,
@@ -389,11 +390,19 @@ export function AuthScreen({
         />
 
         {tab === "registro" && (
-          <CampoWhatsapp
-            error={e.whatsapp}
-            prefijo={v.whatsappPrefijo}
-            numero={v.whatsappNumero}
-          />
+          <>
+            <CampoWhatsapp
+              error={e.whatsapp}
+              prefijo={v.whatsappPrefijo}
+              numero={v.whatsappNumero}
+            />
+            <CamposVendedor
+              negocio={v.negocio}
+              provincia={v.provincia}
+              errorNegocio={e.negocio}
+              errorProvincia={e.provincia}
+            />
+          </>
         )}
 
         <Field
