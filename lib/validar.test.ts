@@ -105,6 +105,8 @@ const auth = () => ({
   apellido: "Diaz",
   whatsappPrefijo: PREFIJO_WHATSAPP,
   whatsappNumero: "11 5555 5555",
+  negocio: "",
+  provincia: "Mendoza",
 });
 
 test("un registro completo no tiene errores", () => {
@@ -112,7 +114,14 @@ test("un registro completo no tiene errores", () => {
 });
 
 test("login solo pide email y contraseña", () => {
-  const d = { ...auth(), password: "x", nombre: "", apellido: "", whatsappNumero: "" };
+  const d = {
+    ...auth(),
+    password: "x",
+    nombre: "",
+    apellido: "",
+    whatsappNumero: "",
+    provincia: "",
+  };
   expect(validarAuth(d, "login")).toEqual({});
   // los mismos datos en registro fallan por todo lo que login no mira
   const e = validarAuth(d, "registro");
@@ -120,6 +129,25 @@ test("login solo pide email y contraseña", () => {
   expect(e.nombre).toBeDefined();
   expect(e.apellido).toBeDefined();
   expect(e.whatsapp).toBeDefined();
+  expect(e.provincia).toBeDefined();
+});
+
+test("el negocio es opcional pero la provincia no", () => {
+  // Quien vende su propia paleta no tiene local: obligarlo a inventar uno seria
+  // peor que el campo vacio.
+  expect(validarAuth({ ...auth(), negocio: "" }, "registro").negocio).toBeUndefined();
+  expect(validarAuth({ ...auth(), negocio: "Padel Store" }, "registro").negocio).toBeUndefined();
+  expect(validarAuth({ ...auth(), negocio: "x".repeat(61) }, "registro").negocio).toBeDefined();
+
+  expect(validarAuth({ ...auth(), provincia: "" }, "registro").provincia).toBeDefined();
+});
+
+test("la provincia se valida contra el catalogo, no por largo", () => {
+  // El valor llega de un <select>: cualquier otra cosa es alguien tocando el
+  // form a mano, y terminaria en la cartelera de /vendedores.
+  expect(validarAuth({ ...auth(), provincia: "Mendoza" }, "registro").provincia).toBeUndefined();
+  expect(validarAuth({ ...auth(), provincia: "Narnia" }, "registro").provincia).toBeDefined();
+  expect(validarAuth({ ...auth(), provincia: "mendoza" }, "registro").provincia).toBeDefined();
 });
 
 test("emails invalidos se rechazan", () => {
@@ -157,7 +185,13 @@ test("el whatsapp se guarda como un solo texto con el prefijo adelante", () => {
 // --- cuenta ---------------------------------------------------------------
 
 test("el perfil pide nombre, apellido y un whatsapp con digitos suficientes", () => {
-  const perfil = { nombre: "Ana", apellido: "Diaz", whatsapp: "+54 9 11 5555 5555" };
+  const perfil = {
+    nombre: "Ana",
+    apellido: "Diaz",
+    whatsapp: "+54 9 11 5555 5555",
+    negocio: "",
+    provincia: "Mendoza",
+  };
   expect(validarPerfil(perfil)).toEqual({});
 
   expect(validarPerfil({ ...perfil, nombre: "" }).nombre).toBeDefined();
@@ -167,6 +201,11 @@ test("el perfil pide nombre, apellido y un whatsapp con digitos suficientes", ()
   expect(validarPerfil({ ...perfil, whatsapp: "no tengo" }).whatsapp).toBeDefined();
   expect(validarPerfil({ ...perfil, whatsapp: "1".repeat(16) }).whatsapp).toBeDefined();
   expect(validarPerfil({ ...perfil, nombre: "a".repeat(61) }).nombre).toBeDefined();
+
+  // Mismas dos reglas que en el registro: la regla vive una sola vez.
+  expect(validarPerfil({ ...perfil, negocio: "x".repeat(61) }).negocio).toBeDefined();
+  expect(validarPerfil({ ...perfil, provincia: "" }).provincia).toBeDefined();
+  expect(validarPerfil({ ...perfil, provincia: "Narnia" }).provincia).toBeDefined();
 });
 
 test("la contraseña nueva tiene que ser larga, distinta y estar repetida igual", () => {

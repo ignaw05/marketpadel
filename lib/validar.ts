@@ -76,7 +76,14 @@ export function validarPaleta(
   return e;
 }
 
-export type CampoAuth = "email" | "password" | "nombre" | "apellido" | "whatsapp";
+export type CampoAuth =
+  | "email"
+  | "password"
+  | "nombre"
+  | "apellido"
+  | "whatsapp"
+  | "negocio"
+  | "provincia";
 
 /** Lo que va en el campo de prefijo por defecto: celular argentino. */
 export const PREFIJO_WHATSAPP = "+54 9";
@@ -90,6 +97,23 @@ export function errorEmail(email: string): string | undefined {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return "Ese email no parece válido.";
 }
 
+/**
+ * El negocio y la provincia se validan igual en el alta y en el perfil, asi que
+ * la regla vive en un solo lado. El negocio es opcional: un vendedor que vende
+ * su propia paleta no tiene local, y obligarlo a inventar uno es peor que el
+ * campo vacio.
+ */
+export function errorNegocio(valor: string): string | undefined {
+  if (valor.trim().length > 60) return "Máximo 60 caracteres.";
+}
+
+export function errorProvincia(valor: string): string | undefined {
+  if (!valor.trim()) return "Elegí tu provincia.";
+  // Contra el catalogo, no contra el largo: el valor llega de un <select> y
+  // cualquier otra cosa es alguien tocando el form a mano.
+  if (!PROVINCIAS.includes(valor)) return "Elegí una provincia de la lista.";
+}
+
 export function validarAuth(
   d: {
     email: string;
@@ -98,6 +122,8 @@ export function validarAuth(
     apellido: string;
     whatsappPrefijo: string;
     whatsappNumero: string;
+    negocio: string;
+    provincia: string;
   },
   modo: "login" | "registro",
 ): Errores<CampoAuth> {
@@ -124,12 +150,18 @@ export function validarAuth(
     else if (digitos.length < 10) e.whatsapp = "Faltan dígitos en el número.";
     // E.164 no admite mas de 15 digitos en total.
     else if (digitos.length > 15) e.whatsapp = "Ese número tiene dígitos de más.";
+
+    const negocio = errorNegocio(d.negocio);
+    if (negocio) e.negocio = negocio;
+
+    const provincia = errorProvincia(d.provincia);
+    if (provincia) e.provincia = provincia;
   }
 
   return e;
 }
 
-export type CampoPerfil = "nombre" | "apellido" | "whatsapp";
+export type CampoPerfil = "nombre" | "apellido" | "whatsapp" | "negocio" | "provincia";
 export type CampoPassword = "actual" | "nueva" | "repetir";
 
 /** El whatsapp del perfil se edita entero, sin partir prefijo y numero. */
@@ -147,6 +179,8 @@ export function validarPerfil(d: {
   nombre: string;
   apellido: string;
   whatsapp: string;
+  negocio: string;
+  provincia: string;
 }): Errores<CampoPerfil> {
   const e: Errores<CampoPerfil> = {};
   if (!d.nombre) e.nombre = "Escribí tu nombre.";
@@ -156,6 +190,12 @@ export function validarPerfil(d: {
 
   const whatsapp = errorTelefono(d.whatsapp);
   if (whatsapp) e.whatsapp = whatsapp;
+
+  const negocio = errorNegocio(d.negocio);
+  if (negocio) e.negocio = negocio;
+
+  const provincia = errorProvincia(d.provincia);
+  if (provincia) e.provincia = provincia;
 
   return e;
 }

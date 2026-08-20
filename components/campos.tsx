@@ -73,6 +73,7 @@ export function Field({
   inputMode,
   readOnly,
   ayuda,
+  opcional,
 }: {
   id?: string;
   name: string;
@@ -86,6 +87,8 @@ export function Field({
   /** Campo inmutable: se muestra apagado y no se manda al server. */
   readOnly?: boolean;
   ayuda?: string;
+  /** Se puede dejar vacío: sin asterisco y sin `required`. */
+  opcional?: boolean;
 }) {
   const id = idProp ?? `campo-${name}`;
   const idAyuda = ayuda ? `${id}-ayuda` : undefined;
@@ -95,13 +98,13 @@ export function Field({
     <div>
       <label className="mb-1.5 block text-[14px]" style={{ color: "#14171A" }} htmlFor={id}>
         {label}
-        {!readOnly && <Obligatorio />}
+        {!readOnly && !opcional && <Obligatorio />}
       </label>
       <input
         id={id}
         name={name}
         type={type}
-        required={!readOnly}
+        required={!readOnly && !opcional}
         readOnly={readOnly}
         placeholder={placeholder}
         defaultValue={defaultValue}
