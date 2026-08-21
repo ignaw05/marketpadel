@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Diamond, Droplet, Circle, Star, BadgeCheck } from "lucide-react";
+import { MapPin, Diamond, Droplet, Circle, Star, BadgeCheck, RefreshCw } from "lucide-react";
 import { ImageWithFallback } from "./image-with-fallback";
 import { Paleta, Forma, formatPrecio, foto } from "@/lib/paletas";
 
@@ -66,19 +66,34 @@ export function PaletaCard({ paleta, priority }: { paleta: Paleta; priority?: bo
         <p className="truncate text-[14px]" style={{ color: "#14171A", fontWeight: 600 }}>
           {paleta.marca} {paleta.modelo}
         </p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        {/* Envuelve en celular, una sola linea desde md: ahi el chip de permuta
+            queda al lado del anio y la forma se achica en vez de desbordar. */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
           <span
-            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px]"
+            className="flex min-w-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px]"
             style={{ background: "#F2F1ED", color: "#14171A", fontWeight: 600 }}
           >
-            <FormaIcon forma={paleta.forma} size={11} /> {paleta.forma}
+            <span className="shrink-0">
+              <FormaIcon forma={paleta.forma} size={11} />
+            </span>
+            <span className="truncate">{paleta.forma}</span>
           </span>
           <span
-            className="rounded-full px-2 py-0.5 text-[11px]"
+            className="shrink-0 rounded-full px-2 py-0.5 text-[11px]"
             style={{ background: "#F2F1ED", color: "#5B6470", fontWeight: 600 }}
           >
             {paleta.anio}
           </span>
+          {/* Solo cuando acepta, igual que en el detalle: no aceptar permuta es
+              el caso normal y no merece un chip. */}
+          {paleta.acepta_permuta && (
+            <span
+              className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px]"
+              style={{ background: "#C7F751", color: "#14171A", fontWeight: 700 }}
+            >
+              <RefreshCw size={11} aria-hidden /> Permuta
+            </span>
+          )}
         </div>
         <p className="mt-2 text-[19px]" style={{ color: "#057305", fontWeight: 700 }}>
           {formatPrecio(paleta.precio)}
