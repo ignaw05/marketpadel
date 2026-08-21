@@ -6,7 +6,7 @@ import { Confirmar } from "@/components/admin/confirmar";
 import { bajarPublicacion, reactivarPublicacion } from "@/app/admin/actions";
 import {
   listarPublicacionesAdmin,
-  ESTADOS_PUBLICACION,
+  FILTROS_ESTADO,
   type FiltrosAdmin,
   type PublicacionAdmin,
 } from "@/lib/admin-db";
@@ -21,13 +21,6 @@ const BADGE = {
   eliminada: { texto: "Dada de baja", fondo: "rgba(212,24,61,0.08)", color: "#D4183D" },
   vencida: { texto: "Vencida", fondo: "#F2F1ED", color: "#5B6470" },
 } as const;
-
-const ETIQUETA_FILTRO: Record<string, string> = {
-  activa: "Activas",
-  pausada: "Pausadas",
-  vendida: "Vendidas",
-  eliminada: "Dadas de baja",
-};
 
 const campo =
   "min-h-[44px] w-full rounded-[14px] px-3 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2";
@@ -67,13 +60,13 @@ function Filtros({ f }: { f: FiltrosAdmin }) {
           id="estado"
           name="estado"
           defaultValue={f.estado ?? ""}
-          className={`mt-1 ${campo} sm:w-44`}
+          className={`mt-1 ${campo} sm:w-52`}
           style={campoStyle}
         >
           <option value="">Todos</option>
-          {ESTADOS_PUBLICACION.map((e) => (
-            <option key={e} value={e}>
-              {ETIQUETA_FILTRO[e]}
+          {FILTROS_ESTADO.map((e) => (
+            <option key={e.valor} value={e.valor}>
+              {e.texto}
             </option>
           ))}
         </select>
@@ -86,6 +79,25 @@ function Filtros({ f }: { f: FiltrosAdmin }) {
       >
         Filtrar
       </button>
+
+      {/* Ortogonal al estado: se puede pedir "activas y ademas sin foto". Por
+          eso es un checkbox aparte y no una opcion mas del select. */}
+      <label
+        htmlFor="sinfoto"
+        className="flex min-h-[44px] items-center gap-2 text-[14px] sm:col-span-3"
+        style={{ color: "#14171A" }}
+      >
+        <input
+          id="sinfoto"
+          name="sinfoto"
+          type="checkbox"
+          value="1"
+          defaultChecked={f.sinfoto === "1"}
+          className="h-[18px] w-[18px] focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{ accentColor: "#057305", outlineColor: "#057305" }}
+        />
+        Solo las que no tienen ninguna foto
+      </label>
     </form>
   );
 }
@@ -193,17 +205,29 @@ export default async function Page({
   const { publicaciones, hayMas } = await listarPublicacionesAdmin(f);
   const pagina = paginaActual(f.pagina);
 
+  // Se llega aca desde "Requiere atencion" con el filtro ya puesto: sin este
+  // aviso la lista parece incompleta y no se ve como volver a todas.
+  const aviso = f.vendedor
+    ? "Viendo solo las publicaciones de un vendedor."
+    : f.estado === "vencidas"
+      ? "Viendo solo las que ya vencieron y siguen en estado activa."
+      : f.estado === "vencen"
+        ? "Viendo solo las que vencen dentro de los próximos 7 días."
+        : f.sinfoto === "1"
+          ? "Viendo solo las que no tienen ninguna foto."
+          : null;
+
   return (
     <div className="space-y-4">
       <Filtros f={f} />
 
-      {f.vendedor && (
+      {aviso && (
         <p
           role="status"
           className="flex flex-wrap items-center gap-2 rounded-[14px] p-3 text-[14px]"
           style={{ background: "#F2F1ED", color: "#14171A" }}
         >
-          Viendo solo las publicaciones de un vendedor.
+          {aviso}
           <Link
             href="/admin/publicaciones"
             className="focus-visible:outline-2 focus-visible:outline-offset-2"

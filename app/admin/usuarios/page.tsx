@@ -3,8 +3,10 @@ import { UserX } from "lucide-react";
 import { Paginacion } from "@/components/paginacion";
 import { Confirmar } from "@/components/admin/confirmar";
 import { banear, desbanear } from "@/app/admin/actions";
+import { Embudo, TopVendedores } from "@/components/admin/embudo";
 import {
   listarUsuariosAdmin,
+  panelGente,
   type FiltrosAdmin,
   type UsuarioAdmin,
 } from "@/lib/admin-db";
@@ -86,11 +88,25 @@ export default async function Page({
   searchParams: Promise<FiltrosAdmin>;
 }) {
   const f = await searchParams;
-  const { usuarios, hayMas } = await listarUsuariosAdmin(f);
+  const [{ usuarios, hayMas }, gente] = await Promise.all([
+    listarUsuariosAdmin(f),
+    panelGente(),
+  ]);
   const pagina = paginaActual(f.pagina);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Embudo datos={gente} />
+
+      <TopVendedores datos={gente} />
+
+      <h2
+        className="text-[16px]"
+        style={{ color: "#14171A", fontWeight: 700, letterSpacing: "-0.025em" }}
+      >
+        Todos los usuarios
+      </h2>
+
       {/* GET nativo: la busqueda queda en la URL, sin estado ni javascript. */}
       <form method="get" className="flex flex-wrap items-end gap-3">
         <div className="min-w-[200px] flex-1">

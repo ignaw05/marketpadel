@@ -27,7 +27,7 @@ export const rangoActual = (v: string | undefined): Rango =>
 
 /** Un punto de la serie. Todas las metricas del mismo bucket, ya en 0 si no hubo nada. */
 export type PuntoSerie = {
-  /** Inicio del bucket, "YYYY-MM-DD". La unidad la da `Estadisticas.unidad`. */
+  /** Inicio del bucket, "YYYY-MM-DD". La unidad la da `unidad`. */
   periodo: string;
   paletas: number;
   promociones: number;
@@ -38,31 +38,148 @@ export type PuntoSerie = {
   activos: number;
 };
 
-export type Estadisticas = {
+export type Unidad = "day" | "week" | "month" | "year";
+
+/** Las metricas que se pueden comparar contra la ventana anterior. */
+export type Movimiento = {
+  paletas: number;
+  promociones: number;
+  ingresos: number;
+  usuarios: number;
+};
+
+/**
+ * Lo accionable del resumen: cada clave es una fila clickeable del panel.
+ * La UI esconde las que dan 0, y si dan todas 0 muestra el estado tranquilo.
+ */
+export type Atencion = {
+  vencen_pronto: number;
+  ya_vencidas: number;
+  sin_foto: number;
+  pagos_problema: number;
+};
+
+export type Resumen = {
   rango: Rango;
-  /** Unidad de los buckets de `serie`, como la usa date_trunc. */
-  unidad: "day" | "week" | "month" | "year";
-  paletas: {
+  unidad: Unidad;
+  /** false en el rango 'total', que no tiene ventana anterior contra que medir. */
+  comparable: boolean;
+  totales: {
     activas: number;
     vencidas: number;
     pausadas: number;
     vendidas: number;
     bajas: number;
     total: number;
+    visitas: number;
   };
-  promociones: { activas: number; total: number };
-  usuarios: { total: number; baneados: number };
-  /** Bruto, en pesos enteros: suma de los pagos aprobados, sin descontar MP. */
+  promociones_vigentes: number;
+  usuarios: number;
+  /** Bruto historico, en pesos enteros: los pagos aprobados sin descontar MP. */
   ganancia: number;
-  /** Promociones del rango abiertas por origen. Las tres claves siempre vienen. */
-  tipos: { premium: number; individual: number; cortesia: number };
-  /**
-   * Las mismas promociones abiertas por plan. `otras` junta todo lo que no es
-   * 15 ni 30 dias: premium y cortesia entran por otro camino y pueden traer
-   * cualquier plazo. Suma lo mismo que `tipos`.
-   */
-  duraciones: { d15: number; d30: number; otras: number };
+  /** Promedio de dias entre publicar y marcar vendida. null si no vendio nadie. */
+  dias_hasta_venta: number | null;
+  periodo: Movimiento;
+  /** null cuando `comparable` es false: distinto de "no hubo movimiento". */
+  anterior: Movimiento | null;
+  atencion: Atencion;
   serie: PuntoSerie[];
+};
+
+export type ConceptoPago = "promocion" | "suscripcion" | "donacion";
+export type EstadoPago = "aprobado" | "pendiente" | "rechazado" | "devuelto";
+
+export type PagoAdmin = {
+  id: string;
+  concepto: ConceptoPago;
+  estado: EstadoPago;
+  monto: number;
+  created_at: string;
+  /** Nombre y apellido del perfil que pago, o "Sin nombre". */
+  persona: string;
+};
+
+export type Dinero = {
+  rango: Rango;
+  unidad: Unidad;
+  comparable: boolean;
+  bruto: { periodo: number; anterior: number | null; historico: number };
+  /** null cuando no hubo ningun pago aprobado en la ventana. */
+  ticket: number | null;
+  /** Porcentaje 0-100. null cuando no hubo ningun intento de pago. */
+  tasa_aprobacion: number | null;
+  pagos: { total: number; aprobados: number };
+  /** Montos, no cantidades: de donde sale la plata. */
+  por_concepto: Record<ConceptoPago, number>;
+  /** Cantidades, no montos: intentos de cobro. */
+  por_estado: Record<EstadoPago, number>;
+  tipos: { premium: number; individual: number; cortesia: number };
+  duraciones: { d15: number; d30: number; otras: number };
+  suscripciones: {
+    vigentes: number;
+    pro_vigentes: number;
+    creditos_usados: number;
+    creditos_totales: number;
+  };
+  ultimos: PagoAdmin[];
+};
+
+/**
+ * Una fila de ranking. `agrupadas` viene en null en las filas reales y trae la
+ * cantidad plegada en la fila "Otras...", que siempre va ultima.
+ */
+export type FilaRanking = { nombre: string; n: number; agrupadas: number | null };
+
+export type Catalogo = {
+  total: number;
+  activas: number;
+  precio: {
+    promedio: number | null;
+    mediana: number | null;
+    min: number | null;
+    max: number | null;
+  };
+  precio_vendidas: number | null;
+  visitas: { total: number; promedio: number | null };
+  dias_hasta_venta: { promedio: number | null; mediana: number | null };
+  permuta: { si: number; activas: number };
+  marcas: FilaRanking[];
+  provincias: FilaRanking[];
+  /** Cortes fijos: <100k, 100-200k, 200-300k, 300-500k, 500k+. */
+  precios: { b1: number; b2: number; b3: number; b4: number; b5: number };
+  formas: { diamante: number; lagrima: number; redonda: number };
+  /** Los 10 valores siempre, incluso los que dan 0. */
+  estado: { valor: number; n: number }[];
+  top_visitas: {
+    id: string;
+    marca: string;
+    modelo: string;
+    provincia: string;
+    precio: number;
+    visitas: number;
+  }[];
+};
+
+export type Gente = {
+  /**
+   * Personas distintas en cada escalon. No son subconjuntos estrictos: se
+   * puede vender sin haber promocionado nunca.
+   */
+  embudo: {
+    registrados: number;
+    publicaron: number;
+    promocionaron: number;
+    vendieron: number;
+  };
+  sin_publicar: number;
+  pro_vigentes: number;
+  top_vendedores: {
+    id: string;
+    nombre: string;
+    paletas: number;
+    vendidas: number;
+    visitas: number;
+  }[];
 };
 
 export type PublicacionAdmin = {
@@ -97,7 +214,27 @@ export type FiltrosAdmin = {
   estado?: string;
   vendedor?: string;
   pagina?: string;
+  /** "1" para ver solo las que no tienen ninguna foto. */
+  sinfoto?: string;
 };
+
+/**
+ * Los valores del filtro `estado`: los cuatro estados de la columna mas dos
+ * cortes por vencimiento.
+ *
+ * Los dos ultimos van en el MISMO parametro y no en uno aparte a proposito:
+ * "vencidas" ya implica estado activa, asi que como parametros separados
+ * podrian contradecirse (?estado=vendida&vence=vencida) y devolver una lista
+ * vacia sin decir por que. En un solo select eso no se puede escribir.
+ */
+export const FILTROS_ESTADO = [
+  { valor: "activa", texto: "Activas" },
+  { valor: "pausada", texto: "Pausadas" },
+  { valor: "vendida", texto: "Vendidas" },
+  { valor: "eliminada", texto: "Dadas de baja" },
+  { valor: "vencen", texto: "Vencen esta semana" },
+  { valor: "vencidas", texto: "Ya vencidas" },
+] as const;
 
 export const ESTADOS_PUBLICACION: EstadoPublicacion[] = [
   "activa",
@@ -106,12 +243,35 @@ export const ESTADOS_PUBLICACION: EstadoPublicacion[] = [
   "eliminada",
 ];
 
-/** Todo el resumen en una RPC: agrupa por periodo y PostgREST no hace group by. */
-export async function estadisticasAdmin(rango: Rango): Promise<Estadisticas> {
+// Una RPC por pantalla y no un jsonb unico: cada pantalla es su propia ruta y
+// si compartieran la lectura, todas pagarian el agregado completo para dibujar
+// un cuarto de el. Las cuatro agrupan por periodo o por categoria, y PostgREST
+// no hace group by.
+
+export async function panelResumen(rango: Rango): Promise<Resumen> {
   const data = await conReintento(() =>
-    admin().rpc("estadisticas_admin", { p_rango: rango }),
+    admin().rpc("panel_resumen", { p_rango: rango }),
   );
-  return data as unknown as Estadisticas;
+  return data as unknown as Resumen;
+}
+
+export async function panelDinero(rango: Rango): Promise<Dinero> {
+  const data = await conReintento(() =>
+    admin().rpc("panel_dinero", { p_rango: rango }),
+  );
+  return data as unknown as Dinero;
+}
+
+/** Sin rango: es una foto del catalogo de ahora, no una ventana movil. */
+export async function panelCatalogo(): Promise<Catalogo> {
+  const data = await conReintento(() => admin().rpc("panel_catalogo"));
+  return data as unknown as Catalogo;
+}
+
+/** Idem: el embudo es acumulado desde siempre, no del mes. */
+export async function panelGente(): Promise<Gente> {
+  const data = await conReintento(() => admin().rpc("panel_gente"));
+  return data as unknown as Gente;
 }
 
 /**
@@ -135,10 +295,26 @@ export async function listarPublicacionesAdmin(
       .range(desde, desde + POR_PAGINA_ADMIN);
 
     if (busqueda) query = query.ilike("modelo", `%${busqueda}%`);
-    if (f.estado && ESTADOS_PUBLICACION.includes(f.estado as EstadoPublicacion)) {
+    if (f.vendedor) query = query.eq("vendedor_id", f.vendedor);
+
+    // Los dos cortes por vencimiento son sobre las activas: una vencida sigue
+    // diciendo 'activa' en la columna, que es justo el problema que senalan.
+    const ahora = new Date().toISOString();
+    if (f.estado === "vencen") {
+      query = query
+        .eq("estado_publicacion", "activa")
+        .gt("vence_at", ahora)
+        .lte("vence_at", new Date(Date.now() + 7 * 86400000).toISOString());
+    } else if (f.estado === "vencidas") {
+      query = query.eq("estado_publicacion", "activa").lte("vence_at", ahora);
+    } else if (f.estado && ESTADOS_PUBLICACION.includes(f.estado as EstadoPublicacion)) {
       query = query.eq("estado_publicacion", f.estado);
     }
-    if (f.vendedor) query = query.eq("vendedor_id", f.vendedor);
+
+    // `fotos` es text[] not null default '{}', asi que "sin foto" es la
+    // igualdad con el array vacio: cardinality() no se puede pedir por
+    // PostgREST.
+    if (f.sinfoto === "1") query = query.eq("fotos", "{}");
 
     return query;
   });

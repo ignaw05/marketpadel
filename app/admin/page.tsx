@@ -1,69 +1,13 @@
-import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Metric } from "@/components/metric";
-import {
-  GraficoSerie,
-  GraficoTipos,
-  GraficoDuraciones,
-} from "@/components/admin/grafico";
-import {
-  estadisticasAdmin,
-  rangoActual,
-  RANGOS,
-  type Rango,
-} from "@/lib/admin-db";
+import { GraficoSerie } from "@/components/admin/grafico";
+import { SelectorRango } from "@/components/admin/selector-rango";
+import { Atencion } from "@/components/admin/atencion";
+import { panelResumen, rangoActual } from "@/lib/admin-db";
+import { variacion, porcentaje } from "@/lib/panel";
 import { formatPrecio } from "@/lib/paletas";
 
 const numero = (n: number) => n.toLocaleString("es-AR");
-
-const ETIQUETA_RANGO: Record<Rango, string> = {
-  dia: "Diario",
-  semana: "Semanal",
-  mes: "Mensual",
-  anio: "Anual",
-  total: "Total",
-};
-
-/** Que ventana mira cada rango. Va debajo del selector para que el eje no sorprenda. */
-const VENTANA: Record<Rango, string> = {
-  dia: "Últimos 30 días, un punto por día.",
-  semana: "Últimas 12 semanas, un punto por semana.",
-  mes: "Últimos 12 meses, un punto por mes.",
-  anio: "Últimos 5 años, un punto por año.",
-  total: "Todo el historial, un punto por mes.",
-};
-
-/**
- * El rango vive en la URL y no en un useState: asi el back del navegador
- * funciona, el link se puede compartir y la pantalla sigue siendo un Server
- * Component. Son <Link>, no botones: cambian de pagina.
- */
-function SelectorRango({ actual }: { actual: Rango }) {
-  return (
-    <nav aria-label="Rango del resumen" className="flex gap-2 overflow-x-auto">
-      {RANGOS.map((r) => {
-        const activo = r === actual;
-        return (
-          <Link
-            key={r}
-            href={`/admin?rango=${r}`}
-            aria-current={activo ? "true" : undefined}
-            className="flex min-h-[44px] shrink-0 items-center rounded-[14px] px-4 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{
-              background: activo ? "#057305" : "#FFFFFF",
-              border: `1px solid ${activo ? "#057305" : "#E6E4DF"}`,
-              color: activo ? "#FFFFFF" : "#14171A",
-              fontWeight: 600,
-              outlineColor: "#057305",
-            }}
-          >
-            {ETIQUETA_RANGO[r]}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
 
 /**
  * Visitas al sitio. No hay grafico porque no hay dato: la base no guarda
@@ -116,88 +60,108 @@ export default async function Page({
   searchParams: Promise<{ rango?: string }>;
 }) {
   const rango = rangoActual((await searchParams).rango);
-  const e = await estadisticasAdmin(rango);
+  const e = await panelResumen(rango);
+
+  const tasaVenta = porcentaje(e.totales.vendidas, e.totales.total);
+  const visitaPorPaleta = e.totales.total
+    ? Math.round(e.totales.visitas / e.totales.total)
+    : 0;
 
   return (
     <div className="space-y-6">
-      {/* Totales de siempre: no dependen del rango, por eso van arriba del selector. */}
+      <SelectorRango actual={rango} base="/admin" />
+
+      {/* El orden es el de la pregunta que responden: cuanta plata entro, como
+          esta el catalogo, cuanta gente hay. */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Metric
-          label="Ganancia total"
-          value={formatPrecio(e.ganancia)}
-          detalle="Bruto, sin descontar MercadoPago"
+          label="Ingresos"
+          value={formatPrecio(e.periodo.ingresos)}
+          detalle={`${formatPrecio(e.ganancia)} desde siempre`}
+          variacion={variacion(e.periodo.ingresos, e.anterior?.ingresos ?? null)}
+          deltaTexto={formatPrecio(
+            Math.abs(e.periodo.ingresos - (e.anterior?.ingresos ?? 0)),
+          )}
         />
         <Metric
-          label="Paletas publicadas"
-          value={numero(e.paletas.activas)}
-          detalle={`${numero(e.paletas.total)} en total`}
+          label="Publicaciones activas"
+          value={numero(e.totales.activas)}
+          detalle={`${numero(e.totales.total)} en total, ${numero(e.totales.pausadas)} pausadas`}
         />
         <Metric
           label="Vendidas"
-          value={numero(e.paletas.vendidas)}
-          detalle={`${numero(e.paletas.pausadas)} pausadas`}
-        />
-        <Metric
-          label="Promociones activas"
-          value={numero(e.promociones.activas)}
-          detalle={`${numero(e.promociones.total)} desde siempre`}
+          value={numero(e.totales.vendidas)}
+          detalle={[
+            tasaVenta !== null ? `${tasaVenta}% del catálogo` : null,
+            e.dias_hasta_venta !== null
+              ? `${e.dias_hasta_venta.toLocaleString("es-AR")} días promedio`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         />
         <Metric
           label="Usuarios"
-          value={numero(e.usuarios.total)}
-          detalle={`${numero(e.usuarios.baneados)} baneados`}
+          value={numero(e.usuarios)}
+          detalle={`${numero(e.periodo.usuarios)} nuevos en el período`}
+          variacion={variacion(e.periodo.usuarios, e.anterior?.usuarios ?? null)}
+          deltaTexto={numero(
+            Math.abs(e.periodo.usuarios - (e.anterior?.usuarios ?? 0)),
+          )}
+          deltaNota="nuevos vs. período anterior"
         />
         <Metric
-          label="Dadas de baja"
-          value={numero(e.paletas.bajas)}
-          detalle={`${numero(e.paletas.vencidas)} vencidas`}
+          label="Promociones vigentes"
+          value={numero(e.promociones_vigentes)}
+          detalle={`${numero(e.periodo.promociones)} abiertas en el período`}
+        />
+        <Metric
+          label="Visitas al catálogo"
+          value={numero(e.totales.visitas)}
+          detalle={`${numero(visitaPorPaleta)} por publicación`}
         />
       </div>
 
-      <div>
-        <SelectorRango actual={rango} />
-        <p className="mt-2 text-[13px]" style={{ color: "#5B6470" }}>
-          {VENTANA[rango]}
-        </p>
-      </div>
+      <Atencion datos={e.atencion} />
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <GraficoSerie
-          titulo="Publicaciones nuevas"
-          datos={e.serie}
-          unidad={e.unidad}
-          campo="paletas"
-        />
-        <GraficoSerie
-          titulo="Ingresos"
-          datos={e.serie}
-          unidad={e.unidad}
-          campo="ingresos"
-          moneda
-          nota="Bruto de los pagos aprobados, sin descontar MercadoPago."
-        />
-        <GraficoSerie
-          titulo="Promociones"
-          datos={e.serie}
-          unidad={e.unidad}
-          campo="promociones"
-        />
-        <GraficoTipos tipos={e.tipos} />
-        <GraficoDuraciones duraciones={e.duraciones} />
-        <GraficoSerie
-          titulo="Usuarios nuevos"
-          datos={e.serie}
-          unidad={e.unidad}
-          campo="usuarios"
-        />
-        <GraficoSerie
-          titulo="Usuarios activos"
-          datos={e.serie}
-          unidad={e.unidad}
-          campo="activos"
-          nota="Personas distintas que publicaron, pagaron o promocionaron. No cuenta las que solo miran."
-        />
-      </div>
+      <section aria-labelledby="tendencia">
+        <h2
+          id="tendencia"
+          className="mb-2.5 text-[16px]"
+          style={{ color: "#14171A", fontWeight: 700, letterSpacing: "-0.025em" }}
+        >
+          Tendencia
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <GraficoSerie
+            titulo="Publicaciones nuevas"
+            datos={e.serie}
+            unidad={e.unidad}
+            campo="paletas"
+          />
+          <GraficoSerie
+            titulo="Ingresos"
+            datos={e.serie}
+            unidad={e.unidad}
+            campo="ingresos"
+            moneda
+            nota="Bruto de los pagos aprobados, sin descontar MercadoPago."
+          />
+          <GraficoSerie
+            titulo="Usuarios nuevos"
+            datos={e.serie}
+            unidad={e.unidad}
+            campo="usuarios"
+          />
+          <GraficoSerie
+            titulo="Usuarios activos"
+            datos={e.serie}
+            unidad={e.unidad}
+            campo="activos"
+            nota="Personas distintas que publicaron, pagaron o promocionaron. No cuenta las que solo miran."
+          />
+        </div>
+      </section>
 
       <Visitas />
     </div>

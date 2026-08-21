@@ -6,7 +6,7 @@
 // que toda esta pantalla. El tooltip es un <title> nativo del SVG, que ademas
 // lo leen los lectores de pantalla gratis, y el dato exacto siempre esta
 // disponible en la tabla del <details>.
-import type { PuntoSerie, Estadisticas } from "@/lib/admin-db";
+import type { PuntoSerie, Unidad } from "@/lib/admin-db";
 import { formatPrecio } from "@/lib/paletas";
 
 const numero = (n: number) => n.toLocaleString("es-AR");
@@ -22,7 +22,7 @@ const VERDE = "#057305";
 // por la RPC, o sea es una fecha pelada. Sin fijar el huso, el servidor (que en
 // Vercel corre en UTC) y el navegador la interpretarian distinto y el 1 de
 // agosto se mostraria como 31 de julio.
-const FMT: Record<Estadisticas["unidad"], Intl.DateTimeFormat> = {
+const FMT: Record<Unidad, Intl.DateTimeFormat> = {
   day: new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", timeZone: "UTC" }),
   week: new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", timeZone: "UTC" }),
   month: new Intl.DateTimeFormat("es-AR", { month: "short", year: "2-digit", timeZone: "UTC" }),
@@ -30,7 +30,7 @@ const FMT: Record<Estadisticas["unidad"], Intl.DateTimeFormat> = {
 };
 
 /** "2026-08-12" -> "12 ago". */
-export function etiquetaPeriodo(periodo: string, unidad: Estadisticas["unidad"]) {
+export function etiquetaPeriodo(periodo: string, unidad: Unidad) {
   const t = FMT[unidad].format(new Date(`${periodo}T00:00:00Z`));
   return unidad === "week" ? `sem. del ${t}` : t;
 }
@@ -77,7 +77,7 @@ export function GraficoSerie({
 }: {
   titulo: string;
   datos: PuntoSerie[];
-  unidad: Estadisticas["unidad"];
+  unidad: Unidad;
   campo: Exclude<keyof PuntoSerie, "periodo">;
   /** Formatea los valores como pesos en vez de como cantidad. */
   moneda?: boolean;
@@ -207,67 +207,30 @@ export function GraficoSerie({
  * blanco. No cambiarlos de a uno sin volver a validar el trio.
  *
  * Cada grafico es su propio espacio de identidad, asi que los mismos tres se
- * reusan en tipos y en duraciones sin que se confundan entre si.
+ * reusan en tipos, duraciones y formas sin que se confundan entre si.
+ *
+ * El trio solo alcanza para TRES filas, y por eso los rankings (marcas,
+ * provincias, precios) no lo usan: van en <Ranking>, a una sola tinta. En una
+ * lista ordenada la identidad la dan la etiqueta y la posicion, no el color,
+ * asi que pintar ocho barras de ocho colores agrega ruido y no informacion.
  */
 const COLORES = ["#057305", "#2a78d6", "#4a3aa7"] as const;
 
-/** Promociones del rango abiertas por origen. */
-export function GraficoTipos({ tipos }: { tipos: Estadisticas["tipos"] }) {
-  return (
-    <GraficoDesglose
-      titulo="Promociones por tipo"
-      vacio="Nadie promocionó una publicación en este período."
-      filas={[
-        { texto: "Premium (crédito de suscripción)", valor: tipos.premium },
-        { texto: "Individual (pago suelto)", valor: tipos.individual },
-        { texto: "Cortesía (gratis)", valor: tipos.cortesia },
-      ]}
-    />
-  );
-}
+/** El gris de las filas plegadas ("Otras marcas"): presente pero en segundo plano. */
+const GRIS = "#B9C0C7";
 
-/**
- * Las mismas promociones abiertas por plan. Son dos graficos y no uno cruzado
- * de seis barras: origen x duracion se lee peor y no responde ninguna de las
- * dos preguntas de corrido.
- */
-export function GraficoDuraciones({
-  duraciones,
-}: {
-  duraciones: Estadisticas["duraciones"];
-}) {
-  return (
-    <GraficoDesglose
-      titulo="Promociones por duración"
-      vacio="Nadie promocionó una publicación en este período."
-      filas={[
-        { texto: "15 días", valor: duraciones.d15 },
-        { texto: "30 días", valor: duraciones.d30 },
-        // Premium y cortesia no pasan por los planes, asi que su plazo puede
-        // ser cualquiera. Sin esta fila las barras no sumarian el total.
-        { texto: "Otra duración", valor: duraciones.otras },
-      ]}
-    />
-  );
-}
-
-/**
- * Desglose categorico: barras horizontales, que es lo unico que deja leer las
- * etiquetas completas en un celular. Maximo tres filas, que es hasta donde
- * llega el trio de colores validado.
- */
-function GraficoDesglose({
+/** Marco comun de las tarjetas de grafico: mismo borde, radio y sombra que <Metric>. */
+function Tarjeta({
   titulo,
-  vacio,
-  filas,
+  total,
+  nota,
+  children,
 }: {
   titulo: string;
-  vacio: string;
-  filas: { texto: string; valor: number }[];
+  total: string;
+  nota?: string;
+  children: React.ReactNode;
 }) {
-  const total = filas.reduce((a, f) => a + f.valor, 0);
-  const max = Math.max(...filas.map((f) => f.valor), 1);
-
   return (
     <figure
       className="m-0 rounded-[14px] p-4"
@@ -277,11 +240,225 @@ function GraficoDesglose({
         <h3 className="text-[13px]" style={{ color: TENUE }}>
           {titulo}
         </h3>
-        <p className="mt-0.5 text-[22px]" style={{ color: VERDE, fontWeight: 800 }}>
-          {numero(total)}
+        <p
+          className="mt-0.5 text-[22px]"
+          style={{ color: VERDE, fontWeight: 800, letterSpacing: "-0.025em" }}
+        >
+          {total}
         </p>
+        {nota && (
+          <p className="mt-0.5 text-[12px]" style={{ color: TENUE }}>
+            {nota}
+          </p>
+        )}
       </figcaption>
+      {children}
+    </figure>
+  );
+}
 
+/** Una fila de barra horizontal con su etiqueta y su numero escritos. */
+function Fila({
+  texto,
+  valor,
+  ancho,
+  color,
+  porcentaje,
+  formato = numero,
+}: {
+  texto: string;
+  valor: number;
+  /** 0-100, relativo al maximo de la lista: es la barra, no el porcentaje. */
+  ancho: number;
+  color: string;
+  /** Se escribe al lado del numero. null cuando no hay total contra que sacarlo. */
+  porcentaje: number | null;
+  formato?: (n: number) => string;
+}) {
+  // Una fila en 0 se sigue listando, pero apagada: que la categoria exista y
+  // este vacia es informacion, y esconderla la haria parecer inexistente.
+  const vacia = valor === 0;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <dt className="text-[13px]" style={{ color: vacia ? TENUE : TINTA }}>
+          {texto}
+        </dt>
+        <dd
+          className="shrink-0 text-[13px] tabular-nums"
+          style={{ color: vacia ? TENUE : TINTA, fontWeight: 600 }}
+        >
+          {formato(valor)}
+          {porcentaje !== null && (
+            <span style={{ color: TENUE, fontWeight: 400 }}> ({porcentaje}%)</span>
+          )}
+        </dd>
+      </div>
+      <span
+        aria-hidden
+        className="mt-1 block h-2 w-full overflow-hidden rounded-full"
+        style={{ background: "#F2F1ED" }}
+      >
+        {!vacia && (
+          <span
+            className="block h-2 rounded-full"
+            style={{ width: `${ancho}%`, background: color }}
+          />
+        )}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Ranking de N filas a una sola tinta. Lo usan marcas, provincias, estados de
+ * pago y el histograma de precios.
+ *
+ * La ultima fila puede venir plegada ("Otras marcas"): se dibuja en gris para
+ * que no compita con las que si son una categoria.
+ */
+export function Ranking({
+  titulo,
+  total,
+  vacio,
+  nota,
+  filas,
+  moneda = false,
+}: {
+  titulo: string;
+  /** El encabezado grande. Se pasa ya formateado: no siempre es la suma. */
+  total: string;
+  vacio: string;
+  nota?: string;
+  filas: { texto: string; valor: number; plegada?: boolean }[];
+  moneda?: boolean;
+}) {
+  const suma = filas.reduce((a, f) => a + f.valor, 0);
+  // El ancho es relativo al maximo y el porcentaje al total: la barra compara
+  // filas entre si, el numero dice cuanto pesa sobre el conjunto.
+  const max = Math.max(...filas.map((f) => f.valor), 0);
+  const fmt = moneda ? formatPrecio : numero;
+
+  return (
+    <Tarjeta titulo={titulo} total={total} nota={nota}>
+      {suma === 0 ? (
+        <Vacio>{vacio}</Vacio>
+      ) : (
+        <dl className="mt-3 space-y-3">
+          {filas.map((f) => (
+            <Fila
+              key={f.texto}
+              texto={f.texto}
+              valor={f.valor}
+              ancho={max > 0 ? (f.valor / max) * 100 : 0}
+              color={f.plegada ? GRIS : VERDE}
+              porcentaje={suma > 0 ? Math.round((f.valor / suma) * 100) : null}
+              formato={fmt}
+            />
+          ))}
+        </dl>
+      )}
+    </Tarjeta>
+  );
+}
+
+/**
+ * Histograma de barras verticales sobre categorias ORDENADAS (el estado 1 a 10).
+ * Es un grafico aparte de <Ranking> porque el orden es el del eje, no el del
+ * valor: reordenarlo por cantidad destruiria lo que el grafico dice.
+ */
+export function Histograma({
+  titulo,
+  total,
+  nota,
+  vacio,
+  barras,
+}: {
+  titulo: string;
+  total: string;
+  nota?: string;
+  vacio: string;
+  barras: { etiqueta: string; valor: number }[];
+}) {
+  const suma = barras.reduce((a, b) => a + b.valor, 0);
+  const max = Math.max(...barras.map((b) => b.valor), 0);
+  const paso = ANCHO / barras.length;
+  const ancho = Math.max(paso - 4, 1);
+
+  return (
+    <Tarjeta titulo={titulo} total={total} nota={nota}>
+      {suma === 0 ? (
+        <Vacio>{vacio}</Vacio>
+      ) : (
+        <svg
+          viewBox={`0 0 ${ANCHO} 124`}
+          className="mt-3 block h-auto w-full"
+          role="img"
+          aria-label={`${titulo}. ${barras.map((b) => `${b.etiqueta}: ${numero(b.valor)}`).join(". ")}.`}
+        >
+          <line x1="0" y1={PISO} x2={ANCHO} y2={PISO} stroke={LINEA} strokeWidth="1" />
+          {barras.map((b, i) => {
+            const alto = max > 0 ? (b.valor / max) * (PISO - TECHO) : 0;
+            const x = i * paso + 2;
+            return (
+              <g key={b.etiqueta}>
+                {alto > 0 && <path d={barra(x, ancho, alto)} fill={VERDE} />}
+                {/* El numero de cada barra, que aca si entra: son pocas categorias. */}
+                <text
+                  x={x + ancho / 2}
+                  y={PISO - alto - 4}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill={b.valor === 0 ? TENUE : TINTA}
+                  fontWeight={b.valor === 0 ? "400" : "600"}
+                >
+                  {numero(b.valor)}
+                </text>
+                <text
+                  x={x + ancho / 2}
+                  y={ALTO + 8}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill={TENUE}
+                >
+                  {b.etiqueta}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
+    </Tarjeta>
+  );
+}
+
+/**
+ * Desglose categorico de HASTA TRES filas, cada una con su color del trio
+ * validado. Para mas de tres va <Ranking>, que es monocromo.
+ *
+ * Barras horizontales porque es lo unico que deja leer las etiquetas completas
+ * en un celular.
+ */
+export function GraficoDesglose({
+  titulo,
+  vacio,
+  filas,
+  nota,
+  moneda = false,
+}: {
+  titulo: string;
+  vacio: string;
+  filas: { texto: string; valor: number }[];
+  nota?: string;
+  /** Formatea los valores como pesos en vez de como cantidad. */
+  moneda?: boolean;
+}) {
+  const total = filas.reduce((a, f) => a + f.valor, 0);
+  const max = Math.max(...filas.map((f) => f.valor), 0);
+  const fmt = moneda ? formatPrecio : numero;
+
+  return (
+    <Tarjeta titulo={titulo} total={fmt(total)} nota={nota}>
       {total === 0 ? (
         <Vacio>{vacio}</Vacio>
       ) : (
@@ -289,36 +466,18 @@ function GraficoDesglose({
         // depende del color solo.
         <dl className="mt-3 space-y-3">
           {filas.map(({ texto, valor }, i) => (
-            <div key={texto}>
-              <div className="flex items-baseline justify-between gap-3">
-                <dt className="text-[13px]" style={{ color: TINTA }}>
-                  {texto}
-                </dt>
-                <dd
-                  className="shrink-0 text-[13px] tabular-nums"
-                  style={{ color: TINTA, fontWeight: 600 }}
-                >
-                  {numero(valor)}
-                  <span style={{ color: TENUE, fontWeight: 400 }}>
-                    {" "}
-                    ({Math.round((valor / total) * 100)}%)
-                  </span>
-                </dd>
-              </div>
-              <span
-                aria-hidden
-                className="mt-1 block h-2 w-full overflow-hidden rounded-full"
-                style={{ background: "#F2F1ED" }}
-              >
-                <span
-                  className="block h-2 rounded-full"
-                  style={{ width: `${(valor / max) * 100}%`, background: COLORES[i] }}
-                />
-              </span>
-            </div>
+            <Fila
+              key={texto}
+              texto={texto}
+              valor={valor}
+              ancho={max > 0 ? (valor / max) * 100 : 0}
+              color={COLORES[i]}
+              porcentaje={Math.round((valor / total) * 100)}
+              formato={fmt}
+            />
           ))}
         </dl>
       )}
-    </figure>
+    </Tarjeta>
   );
 }
