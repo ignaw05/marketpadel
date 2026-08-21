@@ -165,3 +165,25 @@ export async function usarCredito(fd: FormData) {
   revalidatePath("/");
   redirect("/mis-publicaciones?credito=exito");
 }
+
+/**
+ * Marca el anuncio del plan como visto. Lo dispara el propio anuncio al
+ * abrirse, no al cerrarse: cerrar tiene tres salidas (la X, "Ahora no" y
+ * Escape) mas el link a /pro, y todas significan lo mismo.
+ *
+ * Sin revalidatePath a proposito: revalidar la portada mientras el anuncio esta
+ * abierto lo desmontaria en la cara del que lo esta leyendo. La proxima
+ * navegacion ya trae el perfil actualizado.
+ */
+export async function marcarAnuncioPro() {
+  const { supabase, uid } = await sesion();
+
+  const { error } = await supabase
+    .from("perfiles")
+    .update({ vio_anuncio_pro: true })
+    .eq("id", uid);
+
+  // Que falle no rompe nada: el anuncio ya esta en pantalla y a lo sumo vuelve
+  // a salir la proxima vez.
+  if (error) console.error("marcarAnuncioPro:", error);
+}

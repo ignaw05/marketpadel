@@ -137,3 +137,29 @@ export async function miPlan(): Promise<MiPlan> {
 
   return { hasta, suscripcionId: vigente.id as string, usados: count ?? 0 };
 }
+
+/**
+ * Lo minimo para decidir si corresponde el anuncio del plan en la portada.
+ * null cuando no hay sesion, que es la mitad de la regla: al anonimo no le sale.
+ *
+ * Query propia y no un join al layout: el layout ya trae el perfil, pero de
+ * TODAS las pantallas, y el anuncio es solo de la portada.
+ */
+export async function perfilAnuncio(): Promise<{
+  pro_hasta: string | null;
+  vio_anuncio_pro: boolean;
+} | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("perfiles")
+    .select("pro_hasta, vio_anuncio_pro")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return data ?? null;
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, LayoutGrid, LogIn, UserRound, Menu, ArrowLeft, BadgeCheck } from "lucide-react";
+import { Plus, LayoutGrid, LogIn, UserRound, Menu, ArrowLeft } from "lucide-react";
 import { Logo } from "./logo";
 import { Sponsors } from "./sponsors";
 import type { Sponsor } from "@/lib/sponsors-db";
@@ -77,11 +77,9 @@ const itemMenu =
 function MenuPrincipal({
   usuario,
   enMisPaletas,
-  enVendedores,
 }: {
   usuario: { nombre: string; apellido: string } | null;
   enMisPaletas: boolean;
-  enVendedores: boolean;
 }) {
   return (
     <details className="relative">
@@ -96,23 +94,6 @@ function MenuPrincipal({
         className="absolute right-0 top-[calc(100%+8px)] z-40 w-56 rounded-[14px] p-1.5 shadow-lg"
         style={{ background: "#FFFFFF", border: "1px solid #E6E4DF" }}
       >
-        {/* Navegación del sitio, arriba y siempre: lo de abajo es la cuenta. */}
-        <Link
-          href="/vendedores"
-          aria-current={enVendedores ? "page" : undefined}
-          className={itemMenu}
-          style={{
-            color: enVendedores ? VERDE : "#14171A",
-            background: enVendedores ? "#EAF4EA" : undefined,
-            fontWeight: 600,
-            outlineColor: VERDE,
-          }}
-        >
-          <BadgeCheck size={16} aria-hidden /> Vendedores Pro
-        </Link>
-
-        <hr className="my-1.5" style={{ border: 0, borderTop: "1px solid #E6E4DF" }} />
-
         {usuario ? (
           <>
             <Link
@@ -166,7 +147,6 @@ export function Header({
 }) {
   const pathname = usePathname();
   const enMisPaletas = pathname === "/mis-publicaciones";
-  const enVendedores = pathname === "/vendedores";
   const enFeed = pathname === "/";
 
   return (
@@ -206,11 +186,7 @@ export function Header({
               <span className="sr-only">Publicar paleta</span>
             </Link>
 
-            <MenuPrincipal
-              usuario={usuario}
-              enMisPaletas={enMisPaletas}
-              enVendedores={enVendedores}
-            />
+            <MenuPrincipal usuario={usuario} enMisPaletas={enMisPaletas} />
           </div>
         </div>
       </div>

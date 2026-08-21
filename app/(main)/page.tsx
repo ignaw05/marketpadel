@@ -3,7 +3,9 @@ import { HomeScreen } from "@/components/screens/home-screen";
 import { CartelerasHome } from "@/components/carteleras-home";
 import { FAQ } from "@/components/sobre-paletita";
 import { listarPaletas, listarMarcas } from "@/lib/paletas-db";
-import { listarVendedoresPro } from "@/lib/pro-db";
+import { AnuncioPro } from "@/components/anuncio-pro";
+import { listarVendedoresPro, perfilAnuncio } from "@/lib/pro-db";
+import { debeVerAnuncioPro } from "@/lib/pro";
 import {
   CLAVES_FILTRO,
   canonicaFeed,
@@ -63,12 +65,13 @@ export default async function Page({
   const pagina = paginaActual(filtros.pagina);
   const buscando = CLAVES_FILTRO.some((k) => filtros[k]) || pagina > 1;
 
-  const [{ paletas, hayMas }, marcas, vendedoresPro] = await Promise.all([
+  const [{ paletas, hayMas }, marcas, vendedoresPro, perfil] = await Promise.all([
     listarPaletas(filtros),
     listarMarcas(),
     // Solo en la portada limpia: con un filtro puesto el visitante busca algo
     // concreto y las carteleras le empujarian el feed fuera de la pantalla.
     buscando ? Promise.resolve([]) : listarVendedoresPro(2),
+    perfilAnuncio(),
   ]);
 
   const sitio = process.env.NEXT_PUBLIC_BASE_URL!;
@@ -124,6 +127,7 @@ export default async function Page({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
         />
       )}
+      {/* TEMP-ANUNCIO */ true && <AnuncioPro />}
       <HomeScreen
         paletas={paletas}
         marcas={marcas.map((m) => m.nombre)}

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { SearchX, PackageOpen, Plus, Receipt } from "lucide-react";
+import { SearchX, PackageOpen, Plus, Receipt, BadgeCheck, ChevronRight } from "lucide-react";
 import { PaletaCard } from "../paleta-card";
 import { Buscador } from "../buscador";
 import { Filtros, Orden } from "../filtros";
@@ -85,8 +85,17 @@ function TodavíaNoHayNada() {
   );
 }
 
-const historialBase =
+const accesoBase =
   "items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2";
+
+/** El acceso a /vendedores: el mismo boton que el historial, en el lima de Pro. */
+const proStyle = {
+  background: "#C7F751",
+  color: "#14171A",
+  fontWeight: 700,
+  letterSpacing: "-0.015em",
+  outlineColor: "#057305",
+} as const;
 
 const historialStyle = {
   background: "#FFFFFF",
@@ -124,20 +133,50 @@ export function HomeScreen({
   return (
     <div className="mx-auto max-w-[1280px] px-4 py-4 md:px-6">
       {/* El buscador vive acá desde que salio del header: scrollea con el feed.
-          En desktop comparte fila con el historial; en mobile el historial baja
-          a la fila de abajo, al lado del orden. Suspense porque lee la query. */}
+          En desktop comparte fila con los dos accesos, que miden lo mismo y
+          arrancan donde termina el buscador: nada queda colgado en una fila
+          propia. En mobile los dos bajan, cada uno a lo suyo. Suspense porque
+          lee la query. */}
       <div className="mb-3 flex gap-4 md:mb-5">
         <Suspense fallback={<div className="h-[48px] min-w-0 flex-1 md:h-[63px]" />}>
           <Buscador className="min-w-0 flex-1" />
         </Suspense>
         <Link
+          href="/vendedores"
+          className={`${accesoBase} hidden md:flex md:w-[240px] md:shrink-0 md:min-h-[63px] md:rounded-[16px] md:text-[16px]`}
+          style={proStyle}
+        >
+          <BadgeCheck size={20} strokeWidth={2.25} aria-hidden /> Vendedores Pro
+        </Link>
+        <Link
           href="/ventas"
-          className={`${historialBase} hidden md:flex md:w-[320px] md:shrink-0 md:min-h-[63px] md:rounded-[16px] md:text-[16px]`}
+          className={`${accesoBase} hidden md:flex md:w-[320px] md:shrink-0 md:min-h-[63px] md:rounded-[16px] md:text-[16px]`}
           style={historialStyle}
         >
           <Receipt size={20} aria-hidden /> Historial de ventas
         </Link>
       </div>
+
+      {/* La misma puerta, en celular. Ahi no entra al lado del buscador, asi
+          que baja a lo ancho y aprovecha el lugar para decir que hay del otro
+          lado. En desktop no se dibuja: vive en la fila de arriba. */}
+      <Link
+        href="/vendedores"
+        className="mb-3 flex min-h-[56px] items-center gap-3 rounded-[14px] px-3.5 py-2.5 transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 md:hidden"
+        style={proStyle}
+      >
+        <BadgeCheck size={20} strokeWidth={2.25} className="shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14px]">Vendedores Pro</span>
+          <span
+            className="mt-0.5 block text-[12px]"
+            style={{ color: "#3B4550", fontWeight: 400, letterSpacing: "normal", lineHeight: 1.35 }}
+          >
+            Los vendedores oficiales, todos en el mismo lugar.
+          </span>
+        </span>
+        <ChevronRight size={18} strokeWidth={2.25} className="shrink-0" aria-hidden />
+      </Link>
 
 {/* Mobile: ordenar y el historial comparten fila, mismo alto.
 
@@ -153,7 +192,7 @@ export function HomeScreen({
         </Suspense>
         <Link
           href="/ventas"
-          className={`${historialBase} flex min-w-[172px] flex-1 min-h-[52px] rounded-[12px] px-2.5 text-[14px] md:hidden`}
+          className={`${accesoBase} flex min-w-[172px] flex-1 min-h-[52px] rounded-[12px] px-2.5 text-[14px] md:hidden`}
           style={historialStyle}
         >
           <Receipt size={16} aria-hidden /> Historial de ventas

@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { PLAN_PRO, esPro, creditosRestantes, avisoPro } from "./pro";
+import { PLAN_PRO, esPro, creditosRestantes, avisoPro, debeVerAnuncioPro } from "./pro";
 
 const AHORA = new Date("2026-08-20T12:00:00Z");
 const enDias = (d: number) =>
@@ -61,4 +61,27 @@ test("el aviso de vencido no se queda pegado para siempre", () => {
   // cartel rojo cada vez que entra a sus publicaciones.
   expect(avisoPro(enDias(-8), AHORA)).toBe(null);
   expect(avisoPro(enDias(-400), AHORA)).toBe(null);
+});
+
+// --- anuncio del plan ---
+
+test("el anuncio no le sale al que no esta registrado", () => {
+  expect(debeVerAnuncioPro(null, AHORA)).toBe(false);
+});
+
+test("el anuncio le sale una sola vez al registrado que no es Pro", () => {
+  expect(debeVerAnuncioPro({ pro_hasta: null, vio_anuncio_pro: false }, AHORA)).toBe(true);
+  expect(debeVerAnuncioPro({ pro_hasta: null, vio_anuncio_pro: true }, AHORA)).toBe(false);
+});
+
+test("al que ya es Pro no se le vende el plan que tiene", () => {
+  expect(debeVerAnuncioPro({ pro_hasta: enDias(5), vio_anuncio_pro: false }, AHORA)).toBe(false);
+  // Vencido no es Pro: a ese si le corresponde, si nunca lo vio.
+  expect(debeVerAnuncioPro({ pro_hasta: enDias(-1), vio_anuncio_pro: false }, AHORA)).toBe(true);
+});
+
+test("una fila vieja, sin la columna cargada, cuenta como no visto", () => {
+  // La columna es NOT NULL DEFAULT false, pero un select que no la pida deja
+  // undefined: mejor mostrarlo de mas que perder el anuncio en silencio.
+  expect(debeVerAnuncioPro({ pro_hasta: null }, AHORA)).toBe(true);
 });

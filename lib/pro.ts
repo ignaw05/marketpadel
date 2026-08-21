@@ -61,3 +61,16 @@ export function avisoPro(
   if (dias > 0) return dias <= AVISAR_DESDE_DIAS ? "vence-pronto" : null;
   return dias >= -AVISAR_HASTA_DIAS ? "vencido" : null;
 }
+
+/**
+ * A quien le sale el anuncio del plan al abrir la portada: al registrado que
+ * todavia no es Pro y no lo vio nunca. Una sola vez por usuario, no por
+ * navegador, por eso `visto` vive en perfiles y no en localStorage.
+ *
+ * Al anonimo no le sale: no puede activar nada sin cuenta, y el primer contacto
+ * con Paletita no puede ser una pantalla que le tape el mercado.
+ */
+export const debeVerAnuncioPro = (
+  perfil: { pro_hasta?: string | null; vio_anuncio_pro?: boolean | null } | null,
+  ahora: Date = new Date(),
+): boolean => !!perfil && !perfil.vio_anuncio_pro && !esPro(perfil.pro_hasta, ahora);
