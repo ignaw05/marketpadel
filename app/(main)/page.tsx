@@ -127,7 +127,7 @@ export default async function Page({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
         />
       )}
-      {/* TEMP-ANUNCIO */ true && <AnuncioPro />}
+      {debeVerAnuncioPro(perfil) && <AnuncioPro />}
       <HomeScreen
         paletas={paletas}
         marcas={marcas.map((m) => m.nombre)}
